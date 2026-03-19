@@ -37,6 +37,9 @@ export function getIntervalBellAsset(bell: IntervalBell): number {
 const activePlayers: AudioPlayer[] = [];
 const activeTimers: ReturnType<typeof setTimeout>[] = [];
 
+// Track interrupted bell sequence for resume
+let pendingBells: { asset: number; remaining: number } | null = null;
+
 function trackPlayer(player: AudioPlayer): void {
   activePlayers.push(player);
   setTimeout(() => {
@@ -61,6 +64,34 @@ export function stopAllBells(): void {
   activePlayers.length = 0;
 }
 
+/**
+ * Pause bells and remember how many are left to play.
+ */
+export function pauseBells(): void {
+  // Capture remaining count before clearing
+  // pendingBells is set by playBellSequence
+  stopAllBells();
+}
+
+/**
+ * Resume any interrupted bell sequence.
+ */
+export function resumeBells(): void {
+  if (pendingBells && pendingBells.remaining > 0) {
+    const { asset, remaining } = pendingBells;
+    pendingBells = null;
+    playBellSequence(asset, remaining);
+  }
+}
+
+/**
+ * Full stop — cancel bells and discard any pending sequence.
+ */
+export function cancelBells(): void {
+  stopAllBells();
+  pendingBells = null;
+}
+
 function playSound(asset: number): void {
   const player = createAudioPlayer(asset);
   player.play();
@@ -68,11 +99,16 @@ function playSound(asset: number): void {
 }
 
 export function playBellSequence(asset: number, count: number): void {
+  pendingBells = { asset, remaining: count };
   let played = 0;
   const playNext = () => {
-    if (played >= count) return;
+    if (played >= count) {
+      pendingBells = null;
+      return;
+    }
     playSound(asset);
     played++;
+    pendingBells = { asset, remaining: count - played };
     if (played < count) {
       const timer = setTimeout(playNext, 3000);
       activeTimers.push(timer);

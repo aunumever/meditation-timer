@@ -13,7 +13,9 @@ import {
   playIntervalBell,
   playSessionBellPreview,
   playIntervalBellPreview,
-  stopAllBells,
+  pauseBells,
+  resumeBells,
+  cancelBells,
 } from "@/lib/audio";
 import type { BellEvent } from "@/lib/timer";
 
@@ -57,9 +59,18 @@ export default function Index() {
     onBellEvent: handleBellEvent,
   });
 
-  const play = useCallback(() => { stopAllBells(); rawPlay(); }, [rawPlay]);
-  const pause = useCallback(() => { stopAllBells(); rawPause(); }, [rawPause]);
-  const stop = useCallback(() => { stopAllBells(); rawStop(); }, [rawStop]);
+  const play = useCallback(() => { cancelBells(); rawPlay(); }, [rawPlay]);
+  const pause = useCallback(() => { pauseBells(); rawPause(); }, [rawPause]);
+  const stop = useCallback(() => { cancelBells(); rawStop(); }, [rawStop]);
+
+  // Resume pending bells when unpausing
+  const prevPhaseRef = useRef(state.phase);
+  useEffect(() => {
+    if (prevPhaseRef.current === "paused" && state.phase === "meditating") {
+      resumeBells();
+    }
+    prevPhaseRef.current = state.phase;
+  }, [state.phase]);
 
   const isTimerActive = state.phase !== "ready";
 
