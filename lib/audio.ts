@@ -6,17 +6,15 @@ import {
 import type { SessionBell, IntervalBell } from "./settings";
 
 const SESSION_BELL_ASSETS: Record<SessionBell, number> = {
-  "bowl-deep": require("@/assets/sounds/bowl-deep.mp3"),
-  "bowl-high": require("@/assets/sounds/bowl-high.mp3"),
-  "bell-bright": require("@/assets/sounds/bell-bright.mp3"),
-  "bell-soft": require("@/assets/sounds/bell-soft.mp3"),
-  gong: require("@/assets/sounds/gong.mp3"),
+  "rav-vast": require("@/assets/sounds/rav-vast-b-celtic-minor/fsharp3-b2.mp3"),
+  "singing-bowl": require("@/assets/sounds/singing-bowl.mp3"),
+  "gong-large": require("@/assets/sounds/gong-large.mp3"),
 };
 
 const INTERVAL_BELL_ASSETS: Record<IntervalBell, number> = {
-  "chime-soft": require("@/assets/sounds/chime-soft.mp3"),
-  "chime-high": require("@/assets/sounds/chime-high.mp3"),
-  woodblock: require("@/assets/sounds/woodblock.mp3"),
+  "rav-vast-e4": require("@/assets/sounds/rav-vast-b-celtic-minor/E4.mp3"),
+  "rav-vast-csharp4": require("@/assets/sounds/rav-vast-b-celtic-minor/csharp4.mp3"),
+  "rav-vast-a4": require("@/assets/sounds/rav-vast-b-celtic-minor/A4.mp3"),
 };
 
 export async function initAudioMode(overrideSilent: boolean): Promise<void> {
@@ -59,6 +57,8 @@ const activeTimers: ReturnType<typeof setTimeout>[] = [];
 const ringingPlayers: AudioPlayer[] = [];
 /** Players scheduled for cleanup */
 const cleanupTimers: ReturnType<typeof setTimeout>[] = [];
+/** Active fade-out intervals */
+const fadeTimers: ReturnType<typeof setInterval>[] = [];
 
 function clearTimers(): void {
   for (const t of activeTimers) clearTimeout(t);
@@ -68,7 +68,10 @@ function clearTimers(): void {
 function removeAllPlayers(): void {
   for (const t of cleanupTimers) clearTimeout(t);
   cleanupTimers.length = 0;
+  for (const t of fadeTimers) clearInterval(t);
+  fadeTimers.length = 0;
   for (const p of ringingPlayers) {
+    try { p.pause(); } catch { /* ok */ }
     try { p.remove(); } catch { /* already removed */ }
   }
   ringingPlayers.length = 0;
@@ -191,6 +194,42 @@ export function cancelBells(): void {
   clearTimers();
   removeAllPlayers();
   sequence = null;
+}
+
+/** Fade out all ringing players over ~400ms, then remove them */
+export function fadeOutAndStop(): void {
+  clearTimers();
+  sequence = null;
+
+  for (const t of cleanupTimers) clearTimeout(t);
+  cleanupTimers.length = 0;
+
+  const playersToFade = [...ringingPlayers];
+  ringingPlayers.length = 0;
+
+  if (playersToFade.length === 0) return;
+
+  const steps = 8;
+  const intervalMs = 50;
+  let step = 0;
+
+  const fade = setInterval(() => {
+    step++;
+    const vol = 1 - step / steps;
+    for (const p of playersToFade) {
+      try { p.volume = Math.max(0, vol); } catch { /* ok */ }
+    }
+    if (step >= steps) {
+      clearInterval(fade);
+      const idx = fadeTimers.indexOf(fade);
+      if (idx !== -1) fadeTimers.splice(idx, 1);
+      for (const p of playersToFade) {
+        try { p.pause(); } catch { /* ok */ }
+        try { p.remove(); } catch { /* ok */ }
+      }
+    }
+  }, intervalMs);
+  fadeTimers.push(fade);
 }
 
 // --- Simple one-shot sounds (for interval bells and previews) ---

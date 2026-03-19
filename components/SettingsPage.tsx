@@ -25,17 +25,15 @@ interface SettingsPageProps {
 }
 
 const SESSION_BELL_OPTIONS: { label: string; value: SessionBell }[] = [
-  { label: "Bowl Deep", value: "bowl-deep" },
-  { label: "Bowl High", value: "bowl-high" },
-  { label: "Bell Bright", value: "bell-bright" },
-  { label: "Bell Soft", value: "bell-soft" },
-  { label: "Gong", value: "gong" },
+  { label: "Rav Vast", value: "rav-vast" },
+  { label: "Singing Bowl", value: "singing-bowl" },
+  { label: "Gong", value: "gong-large" },
 ];
 
 const INTERVAL_BELL_OPTIONS: { label: string; value: IntervalBell }[] = [
-  { label: "Chime Soft", value: "chime-soft" },
-  { label: "Chime High", value: "chime-high" },
-  { label: "Woodblock", value: "woodblock" },
+  { label: "E4", value: "rav-vast-e4" },
+  { label: "C#4", value: "rav-vast-csharp4" },
+  { label: "A4", value: "rav-vast-a4" },
 ];
 
 const BELL_COUNT_OPTIONS: { label: string; value: BellCount }[] = [
@@ -159,7 +157,7 @@ function TappableHaiku() {
       });
       RNAnimated.timing(opacity, {
         toValue: 1,
-        duration: 1500,
+        duration: 600,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start();

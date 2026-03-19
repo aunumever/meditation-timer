@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type SessionBell = "bowl-deep" | "bowl-high" | "bell-bright" | "bell-soft" | "gong";
-export type IntervalBell = "chime-soft" | "chime-high" | "woodblock";
+export type SessionBell = "rav-vast" | "singing-bowl" | "gong-large";
+export type IntervalBell = "rav-vast-e4" | "rav-vast-csharp4" | "rav-vast-a4";
 export type BellCount = 1 | 3;
 export type PrepTime = 0 | 15 | 30 | 45 | 60;
 export type IntervalFrequency = 5 | 10 | 15 | 20 | 30;
@@ -21,8 +21,8 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   durationHours: 0,
   durationMinutes: 10,
-  sessionBell: "bowl-deep",
-  intervalBell: "chime-soft",
+  sessionBell: "rav-vast",
+  intervalBell: "rav-vast-e4",
   bellCount: 3,
   prepTime: 15,
   intervalEnabled: false,

@@ -16,6 +16,7 @@ import {
   pauseBells,
   resumeBells,
   cancelBells,
+  fadeOutAndStop,
 } from "@/lib/audio";
 import type { BellEvent } from "@/lib/timer";
 
@@ -61,7 +62,7 @@ export default function Index() {
 
   const play = useCallback(() => { cancelBells(); rawPlay(); }, [rawPlay]);
   const pause = useCallback(() => { pauseBells(); rawPause(); }, [rawPause]);
-  const stop = useCallback(() => { cancelBells(); rawStop(); }, [rawStop]);
+  const stop = useCallback(() => { fadeOutAndStop(); rawStop(); }, [rawStop]);
 
   // Resume pending bells when unpausing
   const prevPhaseRef = useRef(state.phase);
@@ -71,6 +72,15 @@ export default function Index() {
     }
     prevPhaseRef.current = state.phase;
   }, [state.phase]);
+
+  // Fade out preview sounds when swiping away from settings page
+  const prevPageRef = useRef(activePage);
+  useEffect(() => {
+    if (prevPageRef.current === 2 && activePage !== 2) {
+      fadeOutAndStop();
+    }
+    prevPageRef.current = activePage;
+  }, [activePage]);
 
   const isTimerActive = state.phase !== "ready";
 
