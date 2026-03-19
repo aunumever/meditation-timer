@@ -1,4 +1,5 @@
 import { View, Text, Switch, ScrollView } from "react-native";
+import Svg, { Path as SvgPath } from "react-native-svg";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PillSelect } from "./PillSelect";
@@ -215,6 +216,34 @@ export function SettingsPage({
           trackColor={{ false: "rgba(255,255,255,0.08)", true: "rgba(255,255,255,0.25)" }}
           thumbColor="#fff"
         />
+      </View>
+
+      {/* Enso circle and quote */}
+      <View style={{ alignItems: "center", marginTop: 80, marginBottom: 16 }}>
+        <Svg width={60} height={60} viewBox="0 0 60 60">
+          <SvgPath
+            d="M30 6 C45 6, 54 18, 54 30 C54 42, 45 54, 30 54 C15 54, 6 42, 6 30 C6 18, 14 8, 26 6.5"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.2)",
+            fontSize: 12,
+            fontStyle: "italic",
+            textAlign: "center",
+            marginTop: 16,
+            lineHeight: 18,
+            paddingHorizontal: 20,
+          }}
+        >
+          sit quietly, doing nothing,{"\n"}
+          spring comes, and the grass{"\n"}
+          grows by itself
+        </Text>
       </View>
     </ScrollView>
   );

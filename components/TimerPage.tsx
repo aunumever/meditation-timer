@@ -73,10 +73,22 @@ function PauseAnimationWrapper({
   );
 }
 
-function SwipeHint({ swipeCount }: { swipeCount: number }) {
+function SwipeHint({ swipeCount, dismissed }: { swipeCount: number; dismissed: boolean }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isVisible = useRef(false);
+
+  useEffect(() => {
+    if (dismissed && isVisible.current) {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      isVisible.current = false;
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [dismissed, opacity]);
 
   useEffect(() => {
     if (swipeCount === 0) return;
@@ -84,13 +96,11 @@ function SwipeHint({ swipeCount }: { swipeCount: number }) {
     if (hideTimer.current) clearTimeout(hideTimer.current);
 
     if (isVisible.current) {
-      // Already showing — just bump brighter briefly, no jarring restart
       Animated.sequence([
         Animated.timing(opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
         Animated.timing(opacity, { toValue: 0.7, duration: 400, useNativeDriver: true }),
       ]).start();
     } else {
-      // First appearance — gentle fade in
       isVisible.current = true;
       Animated.timing(opacity, {
         toValue: 0.7,
@@ -169,6 +179,35 @@ export function TimerPage({
   const isDimmed = state.phase === "overtime";
   const isPrepCountdown = state.phase === "prep";
 
+  // Ring dims quickly on prep start, brightens quickly when meditation begins
+  const ringOpacity = useRef(new Animated.Value(1)).current;
+  const prevPhaseForRing = useRef(state.phase);
+
+  useEffect(() => {
+    const prev = prevPhaseForRing.current;
+    prevPhaseForRing.current = state.phase;
+
+    if (state.phase === "prep" && prev !== "prep") {
+      // Quick fade out
+      Animated.timing(ringOpacity, {
+        toValue: 0.12,
+        duration: 1000,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else if (state.phase === "meditating" && prev === "prep") {
+      // Quick fade up — ring activates
+      Animated.timing(ringOpacity, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else if (state.phase === "ready") {
+      ringOpacity.setValue(1);
+    }
+  }, [state.phase, ringOpacity]);
+
   return (
     <View
       className="flex-1 items-center justify-center bg-black"
@@ -176,11 +215,13 @@ export function TimerPage({
     >
       <PauseAnimationWrapper isPaused={state.phase === "paused"}>
         <View className="items-center justify-center" style={{ marginTop: -40 }}>
-          <TickRing
-            size={ringSize}
-            activeTicks={activeTicks}
-            totalTicks={TOTAL_TICKS}
-          />
+          <Animated.View style={{ opacity: ringOpacity }}>
+            <TickRing
+              size={ringSize}
+              activeTicks={activeTicks}
+              totalTicks={TOTAL_TICKS}
+            />
+          </Animated.View>
           <View
             className="absolute items-center justify-center"
             style={{ width: ringSize, height: ringSize }}
@@ -194,8 +235,8 @@ export function TimerPage({
         </View>
       </PauseAnimationWrapper>
 
-      <View style={{ height: 28, justifyContent: "center", alignItems: "center", marginTop: 16 }}>
-        <SwipeHint swipeCount={swipeAttempt} />
+      <View style={{ height: 28, justifyContent: "center", alignItems: "center", marginTop: 6 }}>
+        <SwipeHint swipeCount={swipeAttempt} dismissed={state.phase === "ready"} />
       </View>
 
       <View>
