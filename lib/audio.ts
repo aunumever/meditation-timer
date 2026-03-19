@@ -33,88 +33,180 @@ export function getIntervalBellAsset(bell: IntervalBell): number {
   return INTERVAL_BELL_ASSETS[bell];
 }
 
-// Track all active players and timers so we can cancel everything
-const activePlayers: AudioPlayer[] = [];
+// --- Bell sequence timeline ---
+// Bells are spaced at BELL_SPACING_MS intervals.
+// Each bell's sound may ring longer than the spacing (overlap is fine).
+// On pause, ALL currently-ringing bells are paused at their playback positions.
+// On resume, they all continue from where they were.
+
+const BELL_SPACING_MS = 3000;
+
+interface SequenceState {
+  asset: number;
+  totalCount: number;
+  /** How many bells have been created */
+  bellsStarted: number;
+  /** Wall-clock time when the sequence started (or last resumed) */
+  startedAt: number;
+  /** Accumulated elapsed ms before the last pause */
+  elapsedBeforePause: number;
+}
+
+let sequence: SequenceState | null = null;
 const activeTimers: ReturnType<typeof setTimeout>[] = [];
 
-// Track interrupted bell sequence for resume
-let pendingBells: { asset: number; remaining: number } | null = null;
+/** All bell players that are currently ringing (may overlap) */
+const ringingPlayers: AudioPlayer[] = [];
+/** Players scheduled for cleanup */
+const cleanupTimers: ReturnType<typeof setTimeout>[] = [];
 
-function trackPlayer(player: AudioPlayer): void {
-  activePlayers.push(player);
-  setTimeout(() => {
-    const idx = activePlayers.indexOf(player);
-    if (idx !== -1) {
-      activePlayers.splice(idx, 1);
-      player.remove();
-    }
-  }, 10000);
-}
-
-export function stopAllBells(): void {
-  for (const timer of activeTimers) {
-    clearTimeout(timer);
-  }
+function clearTimers(): void {
+  for (const t of activeTimers) clearTimeout(t);
   activeTimers.length = 0;
-
-  for (const player of activePlayers) {
-    player.pause();
-    player.remove();
-  }
-  activePlayers.length = 0;
 }
 
-/**
- * Pause bells and remember how many are left to play.
- */
+function removeAllPlayers(): void {
+  for (const t of cleanupTimers) clearTimeout(t);
+  cleanupTimers.length = 0;
+  for (const p of ringingPlayers) {
+    try { p.remove(); } catch { /* already removed */ }
+  }
+  ringingPlayers.length = 0;
+}
+
+function scheduleBell(asset: number, delayMs: number, bellIndex: number): void {
+  const fire = () => {
+    if (!sequence || bellIndex >= sequence.totalCount) return;
+
+    const player = createAudioPlayer(asset);
+    ringingPlayers.push(player);
+    player.play();
+    sequence.bellsStarted = bellIndex + 1;
+
+    // Clean up player after it finishes (generous timeout for long sounds)
+    const ct = setTimeout(() => {
+      const idx = ringingPlayers.indexOf(player);
+      if (idx !== -1) {
+        ringingPlayers.splice(idx, 1);
+        try { player.remove(); } catch { /* ok */ }
+      }
+    }, 15000);
+    cleanupTimers.push(ct);
+  };
+
+  if (delayMs <= 0) {
+    fire();
+  } else {
+    const timer = setTimeout(fire, delayMs);
+    activeTimers.push(timer);
+  }
+}
+
+function startSequenceFrom(asset: number, totalCount: number, elapsedMs: number): void {
+  const now = Date.now();
+
+  sequence = {
+    asset,
+    totalCount,
+    bellsStarted: 0,
+    startedAt: now,
+    elapsedBeforePause: elapsedMs,
+  };
+
+  for (let i = 0; i < totalCount; i++) {
+    const bellTimeMs = i * BELL_SPACING_MS;
+    const delayMs = bellTimeMs - elapsedMs;
+
+    if (delayMs < -500) {
+      // This bell's moment has fully passed, skip
+      sequence.bellsStarted = i + 1;
+      continue;
+    }
+
+    scheduleBell(asset, Math.max(0, delayMs), i);
+  }
+}
+
+export function playBellSequence(asset: number, count: number): void {
+  cancelBells();
+  startSequenceFrom(asset, count, 0);
+}
+
 export function pauseBells(): void {
-  // Capture remaining count before clearing
-  // pendingBells is set by playBellSequence
-  stopAllBells();
+  if (!sequence) return;
+
+  // Capture timeline position
+  const elapsed = sequence.elapsedBeforePause + (Date.now() - sequence.startedAt);
+  sequence.elapsedBeforePause = elapsed;
+  sequence.startedAt = Date.now();
+
+  // Stop pending bell timers (bells that haven't started yet)
+  clearTimers();
+
+  // Pause ALL currently-ringing bell sounds at their current playback positions
+  for (const player of ringingPlayers) {
+    player.pause();
+  }
+
+  // Cancel cleanup timers (don't remove paused players)
+  for (const t of cleanupTimers) clearTimeout(t);
+  cleanupTimers.length = 0;
 }
 
-/**
- * Resume any interrupted bell sequence.
- */
 export function resumeBells(): void {
-  if (pendingBells && pendingBells.remaining > 0) {
-    const { asset, remaining } = pendingBells;
-    pendingBells = null;
-    playBellSequence(asset, remaining);
+  if (!sequence) return;
+
+  // Resume ALL paused bell sounds from where they stopped
+  for (const player of ringingPlayers) {
+    player.play();
+  }
+
+  // Re-schedule cleanup for resumed players
+  for (const player of ringingPlayers) {
+    const ct = setTimeout(() => {
+      const idx = ringingPlayers.indexOf(player);
+      if (idx !== -1) {
+        ringingPlayers.splice(idx, 1);
+        try { player.remove(); } catch { /* ok */ }
+      }
+    }, 15000);
+    cleanupTimers.push(ct);
+  }
+
+  // Schedule any remaining bells that haven't started yet
+  const elapsed = sequence.elapsedBeforePause;
+  sequence.startedAt = Date.now();
+
+  for (let i = sequence.bellsStarted; i < sequence.totalCount; i++) {
+    const bellTimeMs = i * BELL_SPACING_MS;
+    const delayMs = bellTimeMs - elapsed;
+
+    if (delayMs < -500) continue;
+
+    scheduleBell(sequence.asset, Math.max(0, delayMs), i);
   }
 }
 
-/**
- * Full stop — cancel bells and discard any pending sequence.
- */
 export function cancelBells(): void {
-  stopAllBells();
-  pendingBells = null;
+  clearTimers();
+  removeAllPlayers();
+  sequence = null;
 }
+
+// --- Simple one-shot sounds (for interval bells and previews) ---
 
 function playSound(asset: number): void {
   const player = createAudioPlayer(asset);
   player.play();
-  trackPlayer(player);
-}
-
-export function playBellSequence(asset: number, count: number): void {
-  pendingBells = { asset, remaining: count };
-  let played = 0;
-  const playNext = () => {
-    if (played >= count) {
-      pendingBells = null;
-      return;
+  ringingPlayers.push(player);
+  const ct = setTimeout(() => {
+    const idx = ringingPlayers.indexOf(player);
+    if (idx !== -1) {
+      ringingPlayers.splice(idx, 1);
+      try { player.remove(); } catch { /* ok */ }
     }
-    playSound(asset);
-    played++;
-    pendingBells = { asset, remaining: count - played };
-    if (played < count) {
-      const timer = setTimeout(playNext, 3000);
-      activeTimers.push(timer);
-    }
-  };
-  playNext();
+  }, 10000);
+  cleanupTimers.push(ct);
 }
 
 export function playSessionBell(bell: SessionBell, count: number): void {
