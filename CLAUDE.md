@@ -2,10 +2,11 @@
 
 ## Stack
 - **Package manager:** Bun (never npm/yarn)
-- **Framework:** Expo SDK 55, React Native 0.83, React 19.2
-- **Routing:** Expo Router (file-based)
+- **Framework:** Expo SDK 54, React Native 0.81, React 19.1
+- **Routing:** Expo Router (file-based, single route with PagerView)
 - **Styling:** NativeWind v4 + tailwindcss pinned to 3.4.17 (do NOT upgrade)
-- **Backend:** Convex (real-time, serverless)
+- **Storage:** AsyncStorage (local only, no backend)
+- **Audio:** expo-audio
 - **Testing:** Vitest
 - **Language:** TypeScript (strict)
 
@@ -14,14 +15,27 @@
 - Feature branches: `feature/short-description`
 - Conventional commits: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`
 - All merges through Pull Requests
+- Always work on feature branches, never commit directly to `main` or `dev`
 
 ## Scripts
 - `bun run dev` — start Expo dev server
+- `bun run ios` — start on iOS simulator
 - `bun run lint` — ESLint
 - `bun run typecheck` — TypeScript check
 - `bun run test` — Vitest
 
+## Architecture
+- Pure timer state machine in `lib/timer.ts` (testable without React)
+- Settings persistence in `lib/settings.ts` via AsyncStorage
+- Bell scheduling in `lib/bellSchedule.ts` (pure functions)
+- Audio playback in `lib/audio.ts` (imperative, uses `createAudioPlayer`)
+- 3-page horizontal pager: Time Picker | Timer | Settings
+- Dark-only theme
+
 ## Do NOT
 - Use any-type assertions
-- Hardcode colors (use Tailwind classes)
+- Hardcode colors (use Tailwind classes or inline rgba for opacity)
 - Upgrade tailwindcss above 3.4.17 (breaks NativeWind v4)
+- Use `useAudioPlayer` hook for playback (use `createAudioPlayer` instead)
+- Target web platform (mobile only)
+- Add Convex or any backend
