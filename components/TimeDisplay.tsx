@@ -1,4 +1,5 @@
 import { Text } from "react-native";
+import { useTheme } from "@/lib/theme";
 
 interface TimeDisplayProps {
   seconds: number;
@@ -18,14 +19,15 @@ function formatTime(totalSeconds: number): string {
 }
 
 export function TimeDisplay({ seconds, dimmed }: TimeDisplayProps) {
+  const { tint } = useTheme();
   return (
     <Text
       style={{
-        fontSize: 48,
+        fontSize: 44,
         fontWeight: "200",
         letterSpacing: 4,
         fontVariant: ["tabular-nums"],
-        color: dimmed ? "rgba(255,255,255,0.4)" : "white",
+        color: dimmed ? tint(0.4) : tint(1),
       }}
     >
       {formatTime(seconds)}

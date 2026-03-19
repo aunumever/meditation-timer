@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { useTheme } from "@/lib/theme";
 
 interface PageDotsProps {
   total: number;
@@ -6,14 +7,18 @@ interface PageDotsProps {
 }
 
 export function PageDots({ total, active }: PageDotsProps) {
+  const { tint } = useTheme();
   return (
-    <View className="flex-row items-center justify-center gap-2 pb-10">
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingBottom: 40 }}>
       {Array.from({ length: total }, (_, i) => (
         <View
           key={i}
-          className={`h-2 w-2 rounded-full ${
-            i === active ? "bg-white" : "bg-neutral-600"
-          }`}
+          style={{
+            height: 8,
+            width: 8,
+            borderRadius: 4,
+            backgroundColor: i === active ? tint(1) : tint(0.2),
+          }}
         />
       ))}
     </View>

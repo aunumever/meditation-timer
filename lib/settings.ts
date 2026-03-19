@@ -4,7 +4,7 @@ export type SessionBell = "rav-vast" | "singing-bowl" | "gong-large";
 export type IntervalBell = "rav-vast-e4" | "rav-vast-csharp4" | "rav-vast-a4";
 export type BellCount = 1 | 3;
 export type PrepTime = 0 | 15 | 30 | 45 | 60;
-export type IntervalFrequency = 5 | 10 | 15 | 20 | 30;
+export type IntervalFrequency = 5 | 10 | 15 | 20 | 30 | 60;
 
 export interface Settings {
   durationHours: number;
@@ -16,6 +16,10 @@ export interface Settings {
   intervalEnabled: boolean;
   intervalFrequency: IntervalFrequency;
   overrideSilent: boolean;
+  nightMode: boolean;
+  dimEnabled: boolean;
+  /** Screen dim overlay opacity during session, 0 = no dim, 0.9 = darkest */
+  dimBrightness: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +32,9 @@ export const DEFAULT_SETTINGS: Settings = {
   intervalEnabled: false,
   intervalFrequency: 15,
   overrideSilent: true,
+  nightMode: false,
+  dimEnabled: false,
+  dimBrightness: 0.5,
 };
 
 const STORAGE_KEY = "meditation-timer-settings";

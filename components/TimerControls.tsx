@@ -3,6 +3,7 @@ import Svg, { Path, Rect, Line } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef } from "react";
 import type { TimerPhase } from "@/lib/timer";
+import { useTheme } from "@/lib/theme";
 
 interface TimerControlsProps {
   phase: TimerPhase;
@@ -14,17 +15,18 @@ interface TimerControlsProps {
 
 const S = 30;
 const STROKE_WIDTH = 1.2;
-const ICON_COLOR = "rgba(255,255,255,0.85)";
 const HIT = 56;
 const GAP = 40;
 
 function PlayIcon() {
+  const { tint } = useTheme();
+  const color = tint(0.85);
   const p = 7;
   return (
     <Svg width={S} height={S} viewBox={`0 0 ${S} ${S}`}>
       <Path
         d={`M${p + 1},${p} L${S - p},${S / 2} L${p + 1},${S - p} Z`}
-        stroke={ICON_COLOR}
+        stroke={color}
         strokeWidth={STROKE_WIDTH}
         strokeLinejoin="round"
         fill="none"
@@ -34,30 +36,34 @@ function PlayIcon() {
 }
 
 function PauseIcon() {
+  const { tint } = useTheme();
+  const color = tint(0.85);
   const p = 7;
   const gap = S * 0.17;
   return (
     <Svg width={S} height={S} viewBox={`0 0 ${S} ${S}`}>
       <Line
         x1={S / 2 - gap} y1={p} x2={S / 2 - gap} y2={S - p}
-        stroke={ICON_COLOR} strokeWidth={STROKE_WIDTH} strokeLinecap="round"
+        stroke={color} strokeWidth={STROKE_WIDTH} strokeLinecap="round"
       />
       <Line
         x1={S / 2 + gap} y1={p} x2={S / 2 + gap} y2={S - p}
-        stroke={ICON_COLOR} strokeWidth={STROKE_WIDTH} strokeLinecap="round"
+        stroke={color} strokeWidth={STROKE_WIDTH} strokeLinecap="round"
       />
     </Svg>
   );
 }
 
 function StopIcon() {
+  const { tint } = useTheme();
+  const color = tint(0.85);
   const p = 7;
   const s = S - p * 2;
   return (
     <Svg width={S} height={S} viewBox={`0 0 ${S} ${S}`}>
       <Rect
         x={p} y={p} width={s} height={s} rx={2}
-        stroke={ICON_COLOR} strokeWidth={STROKE_WIDTH} fill="none"
+        stroke={color} strokeWidth={STROKE_WIDTH} fill="none"
       />
     </Svg>
   );
@@ -98,7 +104,6 @@ export function TimerControls({
   const showTwo = phase === "meditating" || phase === "paused";
   const offset = (HIT + GAP) / 2;
 
-  // Animate the play/pause button position
   const mainX = useRef(new Animated.Value(0)).current;
   const stopOpacity = useRef(new Animated.Value(0)).current;
 
@@ -129,7 +134,6 @@ export function TimerControls({
         </ControlButton>
       ) : (
         <>
-          {/* Stop button — left side, fades in */}
           <Animated.View
             style={{
               position: "absolute",
@@ -143,7 +147,6 @@ export function TimerControls({
             </ControlButton>
           </Animated.View>
 
-          {/* Play/Pause button — centered, slides right when stop appears */}
           <Animated.View
             style={{
               transform: [{ translateX: mainX }],

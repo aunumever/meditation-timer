@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { View, StatusBar } from "react-native";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { View, StatusBar, StyleSheet, Animated, Easing } from "react-native";
 import PagerView from "react-native-pager-view";
 import { PageDots } from "@/components/PageDots";
 import { TimerPage } from "@/components/TimerPage";
@@ -19,6 +19,7 @@ import {
   fadeOutAndStop,
 } from "@/lib/audio";
 import type { BellEvent } from "@/lib/timer";
+import { ThemeContext, getTheme } from "@/lib/theme";
 
 export default function Index() {
   const [activePage, setActivePage] = useState(1);
@@ -84,6 +85,39 @@ export default function Index() {
 
   const isTimerActive = state.phase !== "ready";
 
+  // Dim overlay: animated for session start/stop, instant for slider preview
+  const dimAnim = useRef(new Animated.Value(0)).current;
+  const dimPreviewActive = useRef(false);
+
+  useEffect(() => {
+    if (dimPreviewActive.current) return;
+    const target = isTimerActive && settings.dimEnabled && settings.dimBrightness > 0 ? settings.dimBrightness : 0;
+    Animated.timing(dimAnim, {
+      toValue: target,
+      duration: 1500,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  }, [isTimerActive, settings.dimBrightness, dimAnim]);
+
+  const setDimOverlay = useCallback((v: number) => {
+    if (v > 0) {
+      dimPreviewActive.current = true;
+      dimAnim.setValue(v);
+    } else {
+      dimPreviewActive.current = false;
+      dimAnim.setValue(0);
+    }
+  }, [dimAnim]);
+
+  const dimBg = useMemo(
+    () => dimAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["rgba(0,0,0,0)", "rgba(0,0,0,1)"],
+    }),
+    [dimAnim],
+  );
+
   // Snap to timer page when session starts
   useEffect(() => {
     if (isTimerActive) {
@@ -91,7 +125,10 @@ export default function Index() {
     }
   }, [isTimerActive]);
 
+  const theme = getTheme(settings.nightMode);
+
   return (
+    <ThemeContext.Provider value={theme}>
     <View className="flex-1 bg-black">
       <StatusBar hidden />
       <PagerView
@@ -127,11 +164,18 @@ export default function Index() {
             onUpdate={updateSettings}
             onPreviewSessionBell={playSessionBellPreview}
             onPreviewIntervalBell={playIntervalBellPreview}
+            onDimPreview={setDimOverlay}
           />
         </View>
       </PagerView>
 
       <PageDots total={3} active={activePage} />
+
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: dimBg }]}
+        pointerEvents="none"
+      />
     </View>
+    </ThemeContext.Provider>
   );
 }

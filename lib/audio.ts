@@ -37,7 +37,7 @@ export function getIntervalBellAsset(bell: IntervalBell): number {
 // On pause, ALL currently-ringing bells are paused at their playback positions.
 // On resume, they all continue from where they were.
 
-const BELL_SPACING_MS = 3000;
+const BELL_SPACING_MS = 13000;
 
 interface SequenceState {
   asset: number;

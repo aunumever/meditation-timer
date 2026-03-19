@@ -11,8 +11,9 @@ import { TickRing } from "./TickRing";
 import { TimeDisplay } from "./TimeDisplay";
 import { TimerControls } from "./TimerControls";
 import { computeActiveTicks, type TimerState } from "@/lib/timer";
+import { useTheme } from "@/lib/theme";
 
-const TOTAL_TICKS = 120;
+const TOTAL_TICKS = 180;
 
 interface TimerPageProps {
   state: TimerState;
@@ -74,6 +75,7 @@ function PauseAnimationWrapper({
 }
 
 function SwipeHint({ swipeCount, dismissed }: { swipeCount: number; dismissed: boolean }) {
+  const { tint } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isVisible = useRef(false);
@@ -125,8 +127,8 @@ function SwipeHint({ swipeCount, dismissed }: { swipeCount: number; dismissed: b
 
   return (
     <Animated.View style={{ opacity }}>
-      <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, letterSpacing: 0.5 }}>
-        stop to navigate
+      <Text style={{ color: tint(0.3), fontSize: 12, letterSpacing: 0.5 }}>
+        Press stop to swipe
       </Text>
     </Animated.View>
   );
@@ -140,7 +142,7 @@ export function TimerPage({
   onStop,
 }: TimerPageProps) {
   const { width } = useWindowDimensions();
-  const ringSize = Math.min(width * 0.82, 340);
+  const ringSize = Math.min(width * 0.72, 300);
   const [swipeAttempt, setSwipeAttempt] = useState(0);
 
   const isLocked = state.phase !== "ready";
@@ -210,36 +212,38 @@ export function TimerPage({
 
   return (
     <View
-      className="flex-1 items-center justify-center bg-black"
+      className="flex-1 bg-black"
       {...panResponder.panHandlers}
     >
-      <PauseAnimationWrapper isPaused={state.phase === "paused"}>
-        <View className="items-center justify-center" style={{ marginTop: -40 }}>
-          <Animated.View style={{ opacity: ringOpacity }}>
-            <TickRing
-              size={ringSize}
-              activeTicks={activeTicks}
-              totalTicks={TOTAL_TICKS}
-            />
-          </Animated.View>
-          <View
-            className="absolute items-center justify-center"
-            style={{ width: ringSize, height: ringSize }}
-          >
-            {isPrepCountdown ? (
-              <TimeDisplay seconds={Math.ceil(state.prepRemaining)} />
-            ) : (
-              <TimeDisplay seconds={displaySeconds} dimmed={isDimmed} />
-            )}
+      <View className="flex-1 items-center justify-center" style={{ paddingTop: 60 }}>
+        <PauseAnimationWrapper isPaused={state.phase === "paused"}>
+          <View className="items-center justify-center">
+            <Animated.View style={{ opacity: ringOpacity }}>
+              <TickRing
+                size={ringSize}
+                activeTicks={activeTicks}
+                totalTicks={TOTAL_TICKS}
+              />
+            </Animated.View>
+            <View
+              className="absolute items-center justify-center"
+              style={{ width: ringSize, height: ringSize }}
+            >
+              {isPrepCountdown ? (
+                <TimeDisplay seconds={Math.ceil(state.prepRemaining)} />
+              ) : (
+                <TimeDisplay seconds={displaySeconds} dimmed={isDimmed} />
+              )}
+            </View>
           </View>
-        </View>
-      </PauseAnimationWrapper>
+        </PauseAnimationWrapper>
 
-      <View style={{ height: 28, justifyContent: "center", alignItems: "center", marginTop: 6 }}>
-        <SwipeHint swipeCount={swipeAttempt} dismissed={state.phase === "ready"} />
+        <View style={{ height: 28, justifyContent: "center", alignItems: "center", marginTop: 6 }}>
+          <SwipeHint swipeCount={swipeAttempt} dismissed={state.phase === "ready"} />
+        </View>
       </View>
 
-      <View>
+      <View style={{ alignItems: "center", paddingBottom: 60 }}>
         <TimerControls
           phase={state.phase}
           onPlay={onPlay}

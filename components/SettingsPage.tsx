@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, Switch, ScrollView, Pressable, Animated as RNAnimated, Easing } from "react-native";
+import Slider from "@react-native-community/slider";
 import Svg, { Line as SvgLine } from "react-native-svg";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PillSelect } from "./PillSelect";
 import { SettingRow } from "./SettingRow";
+import { useTheme } from "@/lib/theme";
 import type {
   Settings,
   SessionBell,
@@ -14,7 +16,6 @@ import type {
   IntervalFrequency,
 } from "@/lib/settings";
 import { HAIKUS } from "@/lib/haiku";
-
 interface SettingsPageProps {
   settings: Settings;
   /** Total meditation duration in minutes */
@@ -22,6 +23,7 @@ interface SettingsPageProps {
   onUpdate: (patch: Partial<Settings>) => void;
   onPreviewSessionBell?: (bell: SessionBell) => void;
   onPreviewIntervalBell?: (bell: IntervalBell) => void;
+  onDimPreview?: (opacity: number) => void;
 }
 
 const SESSION_BELL_OPTIONS: { label: string; value: SessionBell }[] = [
@@ -51,13 +53,15 @@ const PREP_TIME_OPTIONS: { label: string; value: PrepTime }[] = [
 
 const INTERVAL_FREQ_OPTIONS: { label: string; value: IntervalFrequency }[] = [
   { label: "5 min", value: 5 },
-  { label: "10 min", value: 10 },
-  { label: "15 min", value: 15 },
-  { label: "20 min", value: 20 },
-  { label: "30 min", value: 30 },
+  { label: "10", value: 10 },
+  { label: "15", value: 15 },
+  { label: "20", value: 20 },
+  { label: "30", value: 30 },
+  { label: "60", value: 60 },
 ];
 
 function EnsoRing({ size }: { size: number }) {
+  const { tint } = useTheme();
   const totalTicks = 48;
   const center = size / 2;
   const radius = size / 2 - 4;
@@ -112,13 +116,10 @@ function EnsoRing({ size }: { size: number }) {
         const distFromEdge = activeTicks - i;
         let opacity: number;
         if (distFromEdge <= 0) {
-          // Depleted
           opacity = baseMin;
         } else if (distFromEdge > fadeTicks) {
-          // Fully active
           opacity = baseMax + breathBoost;
         } else {
-          // Fade zone trailing the edge
           const t = distFromEdge / fadeTicks;
           opacity = baseMin + (baseMax + breathBoost - baseMin) * Math.pow(t, 0.7);
         }
@@ -127,7 +128,7 @@ function EnsoRing({ size }: { size: number }) {
           <SvgLine
             key={i}
             x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke={`rgba(255,255,255,${opacity})`}
+            stroke={tint(opacity)}
             strokeWidth={1.5}
             strokeLinecap="round"
           />
@@ -138,6 +139,7 @@ function EnsoRing({ size }: { size: number }) {
 }
 
 function TappableHaiku() {
+  const { tint } = useTheme();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * HAIKUS.length));
   const opacity = useRef(new RNAnimated.Value(1)).current;
 
@@ -169,7 +171,7 @@ function TappableHaiku() {
       <RNAnimated.Text
         style={{
           opacity,
-          color: "rgba(255,255,255,0.18)",
+          color: tint(0.18),
           fontSize: 12,
           fontStyle: "italic",
           textAlign: "center",
@@ -185,10 +187,11 @@ function TappableHaiku() {
 }
 
 function SectionTitle({ children }: { children: string }) {
+  const { tint } = useTheme();
   return (
     <Text
       style={{
-        color: "white",
+        color: tint(1),
         fontSize: 17,
         fontWeight: "300",
         letterSpacing: 1.5,
@@ -203,11 +206,12 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 function Divider() {
+  const { tint } = useTheme();
   return (
     <View
       style={{
         height: 1,
-        backgroundColor: "rgba(255,255,255,0.06)",
+        backgroundColor: tint(0.06),
         marginVertical: 12,
       }}
     />
@@ -220,10 +224,21 @@ export function SettingsPage({
   onUpdate,
   onPreviewSessionBell,
   onPreviewIntervalBell,
+  onDimPreview,
 }: SettingsPageProps) {
+  const { tint } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Only show interval frequencies shorter than the session duration
+  // Slider shows brightness (1 = full, 0.05 = nearly black), stored as overlay opacity (inverted)
+  const onDimSliderChange = useCallback((v: number) => {
+    onDimPreview?.(1 - v);
+  }, [onDimPreview]);
+
+  const onDimSliderComplete = useCallback((v: number) => {
+    onUpdate({ dimBrightness: 1 - v });
+    onDimPreview?.(0);
+  }, [onUpdate, onDimPreview]);
+
   const validIntervalOptions = INTERVAL_FREQ_OPTIONS.filter(
     (opt) => opt.value < durationMinutes,
   );
@@ -269,26 +284,66 @@ export function SettingsPage({
         />
       </SettingRow>
 
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: settings.dimEnabled ? 16 : 32 }}>
+        <View style={{ flex: 1, marginRight: 16 }}>
+          <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+            Extra Dim
+          </Text>
+          <Text style={{ color: tint(0.35), fontSize: 13 }}>
+            Layers over your device brightness during meditation
+          </Text>
+        </View>
+        <Switch
+          value={settings.dimEnabled}
+          onValueChange={(v) => onUpdate({ dimEnabled: v })}
+          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          thumbColor={tint(1)}
+        />
+      </View>
+
+      {settings.dimEnabled && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(150)}
+          style={{ marginBottom: 32 }}
+        >
+          <Text style={{ color: tint(0.25), fontSize: 12, marginBottom: 8 }}>
+            Drag to preview brightness
+          </Text>
+          <Slider
+            value={1 - settings.dimBrightness}
+            onValueChange={onDimSliderChange}
+            onSlidingComplete={onDimSliderComplete}
+            minimumValue={0.1}
+            maximumValue={1}
+            step={0.01}
+            minimumTrackTintColor={tint(0.4)}
+            maximumTrackTintColor={tint(0.1)}
+            thumbTintColor={tint(1)}
+          />
+        </Animated.View>
+      )}
+
       <Divider />
 
       {/* Intervals */}
       <SectionTitle>Intervals</SectionTitle>
 
       {!intervalsAvailable ? (
-        <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginBottom: 16 }}>
+        <Text style={{ color: tint(0.3), fontSize: 13, marginBottom: 16 }}>
           Session too short for interval bells
         </Text>
       ) : (
         <>
-          <View className="flex-row items-center justify-between mb-6">
-            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <Text style={{ color: tint(0.6), fontSize: 14 }}>
               Ring at regular intervals
             </Text>
             <Switch
               value={settings.intervalEnabled}
               onValueChange={(v) => onUpdate({ intervalEnabled: v })}
-              trackColor={{ false: "rgba(255,255,255,0.08)", true: "rgba(255,255,255,0.25)" }}
-              thumbColor="#fff"
+              trackColor={{ false: tint(0.08), true: tint(0.25) }}
+              thumbColor={tint(1)}
             />
           </View>
 
@@ -329,20 +384,37 @@ export function SettingsPage({
       {/* System */}
       <SectionTitle>System</SectionTitle>
 
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1 mr-4">
-          <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <View style={{ flex: 1, marginRight: 16 }}>
+          <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+            Night Mode
+          </Text>
+          <Text style={{ color: tint(0.35), fontSize: 13 }}>
+            Removes blue light for evening use
+          </Text>
+        </View>
+        <Switch
+          value={settings.nightMode}
+          onValueChange={(v) => onUpdate({ nightMode: v })}
+          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          thumbColor={tint(1)}
+        />
+      </View>
+
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ flex: 1, marginRight: 16 }}>
+          <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
             Override Silent Mode
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
-            Bells play even when silenced
+          <Text style={{ color: tint(0.35), fontSize: 13 }}>
+            Bells play even when your phone is set to silent
           </Text>
         </View>
         <Switch
           value={settings.overrideSilent}
           onValueChange={(v) => onUpdate({ overrideSilent: v })}
-          trackColor={{ false: "rgba(255,255,255,0.08)", true: "rgba(255,255,255,0.25)" }}
-          thumbColor="#fff"
+          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          thumbColor={tint(1)}
         />
       </View>
 
