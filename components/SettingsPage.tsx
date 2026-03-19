@@ -1,5 +1,6 @@
-import { View, Text, Switch, ScrollView } from "react-native";
-import Svg, { Path as SvgPath } from "react-native-svg";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { View, Text, Switch, ScrollView, Pressable, Animated as RNAnimated, Easing } from "react-native";
+import Svg, { Line as SvgLine } from "react-native-svg";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PillSelect } from "./PillSelect";
@@ -12,6 +13,7 @@ import type {
   PrepTime,
   IntervalFrequency,
 } from "@/lib/settings";
+import { HAIKUS } from "@/lib/haiku";
 
 interface SettingsPageProps {
   settings: Settings;
@@ -56,6 +58,133 @@ const INTERVAL_FREQ_OPTIONS: { label: string; value: IntervalFrequency }[] = [
   { label: "20 min", value: 20 },
   { label: "30 min", value: 30 },
 ];
+
+function EnsoRing({ size }: { size: number }) {
+  const totalTicks = 48;
+  const center = size / 2;
+  const radius = size / 2 - 4;
+  const tickLen = 8;
+  const baseMax = 0.10;
+  const baseMin = 0.03;
+  const activeTicks = 40;
+  const fadeTicks = 3;
+
+  const [breath, setBreath] = useState(0);
+
+  useEffect(() => {
+    let rafId: number;
+    let startTime: number | null = null;
+    const breatheIn = 8000;
+    const breatheOut = 8000;
+    const rest = 6000;
+    const cycle = breatheIn + breatheOut + rest;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) % cycle;
+
+      if (elapsed < breatheIn) {
+        const t = elapsed / breatheIn;
+        setBreath(t * t);
+      } else if (elapsed < breatheIn + breatheOut) {
+        const t = (elapsed - breatheIn) / breatheOut;
+        setBreath((1 - t) * (1 - t));
+      } else {
+        setBreath(0);
+      }
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  const breathBoost = breath * 0.2;
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {Array.from({ length: totalTicks }, (_, i) => {
+        const angle = (i / totalTicks) * 2 * Math.PI - Math.PI / 2;
+        const x1 = center + (radius - tickLen) * Math.cos(angle);
+        const y1 = center + (radius - tickLen) * Math.sin(angle);
+        const x2 = center + radius * Math.cos(angle);
+        const y2 = center + radius * Math.sin(angle);
+
+        const distFromEdge = activeTicks - i;
+        let opacity: number;
+        if (distFromEdge <= 0) {
+          // Depleted
+          opacity = baseMin;
+        } else if (distFromEdge > fadeTicks) {
+          // Fully active
+          opacity = baseMax + breathBoost;
+        } else {
+          // Fade zone trailing the edge
+          const t = distFromEdge / fadeTicks;
+          opacity = baseMin + (baseMax + breathBoost - baseMin) * Math.pow(t, 0.7);
+        }
+
+        return (
+          <SvgLine
+            key={i}
+            x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke={`rgba(255,255,255,${opacity})`}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </Svg>
+  );
+}
+
+function TappableHaiku() {
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * HAIKUS.length));
+  const opacity = useRef(new RNAnimated.Value(1)).current;
+
+  const nextHaiku = useCallback(() => {
+    RNAnimated.timing(opacity, {
+      toValue: 0,
+      duration: 1200,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      setIndex((prev) => {
+        let next = prev;
+        while (next === prev) {
+          next = Math.floor(Math.random() * HAIKUS.length);
+        }
+        return next;
+      });
+      RNAnimated.timing(opacity, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [opacity]);
+
+  return (
+    <Pressable onPress={nextHaiku}>
+      <RNAnimated.Text
+        style={{
+          opacity,
+          color: "rgba(255,255,255,0.18)",
+          fontSize: 12,
+          fontStyle: "italic",
+          textAlign: "center",
+          marginTop: 16,
+          lineHeight: 18,
+          paddingHorizontal: 20,
+        }}
+      >
+        {HAIKUS[index]}
+      </RNAnimated.Text>
+    </Pressable>
+  );
+}
 
 function SectionTitle({ children }: { children: string }) {
   return (
@@ -105,6 +234,7 @@ export function SettingsPage({
   return (
     <ScrollView
       className="flex-1 bg-black"
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={{
         paddingHorizontal: 28,
         paddingTop: insets.top + 48,
@@ -218,32 +348,10 @@ export function SettingsPage({
         />
       </View>
 
-      {/* Enso circle and quote */}
+      {/* Enso circle and haiku */}
       <View style={{ alignItems: "center", marginTop: 80, marginBottom: 16 }}>
-        <Svg width={60} height={60} viewBox="0 0 60 60">
-          <SvgPath
-            d="M30 6 C45 6, 54 18, 54 30 C54 42, 45 54, 30 54 C15 54, 6 42, 6 30 C6 18, 14 8, 26 6.5"
-            stroke="rgba(255,255,255,0.1)"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            fill="none"
-          />
-        </Svg>
-        <Text
-          style={{
-            color: "rgba(255,255,255,0.2)",
-            fontSize: 12,
-            fontStyle: "italic",
-            textAlign: "center",
-            marginTop: 16,
-            lineHeight: 18,
-            paddingHorizontal: 20,
-          }}
-        >
-          sit quietly, doing nothing,{"\n"}
-          spring comes, and the grass{"\n"}
-          grows by itself
-        </Text>
+        <EnsoRing size={70} />
+        <TappableHaiku />
       </View>
     </ScrollView>
   );

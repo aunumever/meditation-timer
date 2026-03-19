@@ -83,7 +83,7 @@ export default function Index() {
 
   return (
     <View className="flex-1 bg-black">
-      <StatusBar barStyle="light-content" />
+      <StatusBar hidden />
       <PagerView
         ref={pagerRef}
         style={{ flex: 1 }}
