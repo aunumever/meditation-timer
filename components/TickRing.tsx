@@ -9,11 +9,18 @@ interface TickRingProps {
 }
 
 const TICK_LENGTH = 14;
-const MIN_OPACITY = 0.08;
+const MIN_OPACITY = 0.12;
+const FADE_TICKS = 3;
 
 export function TickRing({ size, activeTicks, totalTicks }: TickRingProps) {
   const center = size / 2;
   const radius = size / 2 - 20;
+
+  // The "edge" is the fractional tick being depleted right now.
+  // edgeIndex is the tick that's currently partially visible.
+  const edgeIndex = Math.floor(activeTicks);
+  // fraction = how much of the edge tick remains (1 = full, 0 = gone)
+  const edgeFraction = activeTicks - edgeIndex;
 
   return (
     <View style={{ width: size, height: size }}>
@@ -25,18 +32,26 @@ export function TickRing({ size, activeTicks, totalTicks }: TickRingProps) {
           const x2 = center + radius * Math.cos(angle);
           const y2 = center + radius * Math.sin(angle);
 
-          // Smooth per-tick opacity:
-          // Ticks well before the edge: full white
-          // The tick at the edge: partial opacity based on fractional remainder
-          // Ticks past the edge: near-invisible
           let opacity: number;
-          if (i < Math.floor(activeTicks)) {
-            opacity = 1;
-          } else if (i < activeTicks) {
-            // This is the fractional tick — fade smoothly
-            opacity = MIN_OPACITY + (1 - MIN_OPACITY) * (activeTicks - i);
-          } else {
+          if (i > edgeIndex) {
+            // Past the edge — depleted
             opacity = MIN_OPACITY;
+          } else if (i === edgeIndex) {
+            // The tick currently being depleted — fade with its fraction
+            opacity = MIN_OPACITY + (1 - MIN_OPACITY) * edgeFraction;
+          } else {
+            // Before the edge — check if in the staggered trail zone
+            const ticksBehindEdge = edgeIndex - i;
+            if (ticksBehindEdge <= FADE_TICKS && edgeIndex < totalTicks) {
+              // Staggered: ticks closer to edge are dimmer
+              // ticksBehindEdge=1 is closest to edge (dimmest in trail)
+              // ticksBehindEdge=FADE_TICKS is furthest (brightest in trail)
+              const t = ticksBehindEdge / FADE_TICKS; // 1/3, 2/3, 1
+              const trailDim = Math.pow(1 - t, 1.5) * 0.3; // max 30% dimming for closest
+              opacity = 1 - trailDim;
+            } else {
+              opacity = 1;
+            }
           }
 
           return (

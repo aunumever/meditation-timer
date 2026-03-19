@@ -1,5 +1,12 @@
-import { View, Animated, Easing, useWindowDimensions } from "react-native";
-import { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  Animated,
+  Easing,
+  PanResponder,
+  useWindowDimensions,
+} from "react-native";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { TickRing } from "./TickRing";
 import { TimeDisplay } from "./TimeDisplay";
 import { TimerControls } from "./TimerControls";
@@ -66,6 +73,55 @@ function PauseAnimationWrapper({
   );
 }
 
+function SwipeHint({ swipeCount }: { swipeCount: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isVisible = useRef(false);
+
+  useEffect(() => {
+    if (swipeCount === 0) return;
+
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+
+    if (isVisible.current) {
+      // Already showing — just bump brighter briefly, no jarring restart
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 100, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.7, duration: 400, useNativeDriver: true }),
+      ]).start();
+    } else {
+      // First appearance — gentle fade in
+      isVisible.current = true;
+      Animated.timing(opacity, {
+        toValue: 0.7,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    hideTimer.current = setTimeout(() => {
+      isVisible.current = false;
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    }, 3000);
+
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [swipeCount, opacity]);
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, letterSpacing: 0.5 }}>
+        stop to navigate
+      </Text>
+    </Animated.View>
+  );
+}
+
 export function TimerPage({
   state,
   onPlay,
@@ -75,6 +131,26 @@ export function TimerPage({
 }: TimerPageProps) {
   const { width } = useWindowDimensions();
   const ringSize = Math.min(width * 0.82, 340);
+  const [swipeAttempt, setSwipeAttempt] = useState(0);
+
+  const isLocked = state.phase !== "ready";
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          // Only intercept horizontal swipes when locked
+          if (!isLocked) return false;
+          return Math.abs(gesture.dx) > 15 && Math.abs(gesture.dx) > Math.abs(gesture.dy);
+        },
+        onPanResponderRelease: () => {
+          if (isLocked) {
+            setSwipeAttempt((n) => n + 1);
+          }
+        },
+      }),
+    [isLocked],
+  );
 
   const activeTicks =
     state.phase === "ready" || state.phase === "prep"
@@ -94,7 +170,10 @@ export function TimerPage({
   const isPrepCountdown = state.phase === "prep";
 
   return (
-    <View className="flex-1 items-center justify-center bg-black">
+    <View
+      className="flex-1 items-center justify-center bg-black"
+      {...panResponder.panHandlers}
+    >
       <PauseAnimationWrapper isPaused={state.phase === "paused"}>
         <View className="items-center justify-center" style={{ marginTop: -40 }}>
           <TickRing
@@ -115,7 +194,11 @@ export function TimerPage({
         </View>
       </PauseAnimationWrapper>
 
-      <View className="mt-12">
+      <View style={{ height: 28, justifyContent: "center", alignItems: "center", marginTop: 16 }}>
+        <SwipeHint swipeCount={swipeAttempt} />
+      </View>
+
+      <View>
         <TimerControls
           phase={state.phase}
           onPlay={onPlay}
