@@ -18,7 +18,7 @@ export function TimePickerPage({
   onChangeHours,
   onChangeMinutes,
 }: TimePickerPageProps) {
-  const { tint } = useTheme();
+  const { tint, night } = useTheme();
   return (
     <View className="flex-1 items-center justify-center bg-black">
       <View className="flex-row items-center">
@@ -27,7 +27,7 @@ export function TimePickerPage({
             selectedValue={hours}
             onValueChange={(v) => onChangeHours(v as number)}
             itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor={tint(0.06)}
+            selectionColor={night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)"}
           >
             {HOURS.map((h) => (
               <Picker.Item key={h} label={String(h)} value={h} color={tint(1)} />
@@ -41,7 +41,7 @@ export function TimePickerPage({
             selectedValue={minutes}
             onValueChange={(v) => onChangeMinutes(v as number)}
             itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor={tint(0.06)}
+            selectionColor={night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)"}
           >
             {MINUTES.map((m) => (
               <Picker.Item key={m} label={String(m)} value={m} color={tint(1)} />

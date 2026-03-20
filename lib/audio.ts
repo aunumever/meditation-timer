@@ -6,15 +6,15 @@ import {
 import type { SessionBell, IntervalBell, BackgroundNoise } from "./settings";
 
 const SESSION_BELL_ASSETS: Record<SessionBell, number> = {
-  "rav-vast": require("@/assets/sounds/rav-vast-b-celtic-minor/fsharp3-b2.mp3"),
-  "singing-bowl": require("@/assets/sounds/singing-bowl.mp3"),
-  "gong-large": require("@/assets/sounds/gong-large.mp3"),
+  "rav-vast": require("@/assets/sounds/active/bells/rav-vast.mp3"),
+  "singing-bowl": require("@/assets/sounds/active/bells/singing-bowl.mp3"),
+  "gong-large": require("@/assets/sounds/active/bells/gong-large.mp3"),
 };
 
 const INTERVAL_BELL_ASSETS: Record<IntervalBell, number> = {
-  "rav-vast-e4": require("@/assets/sounds/rav-vast-b-celtic-minor/E4.mp3"),
-  "rav-vast-csharp4": require("@/assets/sounds/rav-vast-b-celtic-minor/csharp4.mp3"),
-  "rav-vast-a4": require("@/assets/sounds/rav-vast-b-celtic-minor/A4.mp3"),
+  "rav-vast-e4": require("@/assets/sounds/active/intervals/rav-vast-e4.mp3"),
+  "rav-vast-csharp4": require("@/assets/sounds/active/intervals/rav-vast-csharp4.mp3"),
+  "rav-vast-a4": require("@/assets/sounds/active/intervals/rav-vast-a4.mp3"),
 };
 
 export async function initAudioMode(overrideSilent: boolean): Promise<void> {
@@ -267,7 +267,7 @@ export function playIntervalBellPreview(bell: IntervalBell): void {
 // --- Background noise (looping ambient sound during meditation) ---
 
 const BACKGROUND_NOISE_ASSETS: Record<Exclude<BackgroundNoise, "none">, number> = {
-  "brown-noise": require("@/assets/sounds/background/brown-noise.mp3"),
+  "brown-noise": require("@/assets/sounds/active/background/brown-noise.mp3"),
 };
 
 let bgPlayer: AudioPlayer | null = null;
@@ -281,24 +281,37 @@ function clearBgFade(): void {
 }
 
 export function startBackgroundNoise(noise: BackgroundNoise): void {
-  stopBackgroundNoise();
+  // Kill any existing player immediately (no fade for restart)
+  clearBgFade();
+  if (bgPlayer) {
+    try { bgPlayer.pause(); } catch { /* ok */ }
+    try { bgPlayer.remove(); } catch { /* ok */ }
+    bgPlayer = null;
+  }
   if (noise === "none") return;
 
   const player = createAudioPlayer(BACKGROUND_NOISE_ASSETS[noise]);
   player.loop = true;
   player.volume = 0;
-  player.play();
   bgPlayer = player;
 
-  // Fade in over 3 seconds
-  const steps = 30;
-  const intervalMs = 100;
-  let step = 0;
-  bgFadeTimer = setInterval(() => {
-    step++;
-    if (bgPlayer) bgPlayer.volume = Math.min(1, step / steps);
-    if (step >= steps) clearBgFade();
-  }, intervalMs);
+  // Small delay to ensure player is ready before playing
+  setTimeout(() => {
+    if (bgPlayer !== player) return; // was replaced
+    player.play();
+
+    // Fade in over 3 seconds
+    const steps = 30;
+    const intervalMs = 100;
+    let step = 0;
+    bgFadeTimer = setInterval(() => {
+      step++;
+      try {
+        if (bgPlayer === player) player.volume = Math.min(1, step / steps);
+      } catch { /* ok */ }
+      if (step >= steps) clearBgFade();
+    }, intervalMs);
+  }, 50);
 }
 
 export function stopBackgroundNoise(): void {
@@ -312,14 +325,15 @@ export function stopBackgroundNoise(): void {
   const steps = 20;
   const intervalMs = 100;
   let step = 0;
-  const currentVol = player.volume;
+  let currentVol = 1;
+  try { currentVol = player.volume; } catch { /* ok */ }
 
-  bgFadeTimer = setInterval(() => {
+  const fadeTimer = setInterval(() => {
     step++;
     const vol = currentVol * (1 - step / steps);
     try { player.volume = Math.max(0, vol); } catch { /* ok */ }
     if (step >= steps) {
-      clearBgFade();
+      clearInterval(fadeTimer);
       try { player.pause(); } catch { /* ok */ }
       try { player.remove(); } catch { /* ok */ }
     }
