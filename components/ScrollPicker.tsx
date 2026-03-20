@@ -19,15 +19,20 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
   const { tint } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const lastIndex = useRef(values.indexOf(selected));
-  const isDragging = useRef(false);
+  const mounted = useRef(false);
 
+  // Initial scroll on mount
   useEffect(() => {
     const idx = values.indexOf(selected);
-    if (idx >= 0 && !isDragging.current) {
+    if (idx >= 0) {
       lastIndex.current = idx;
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
-      }, 50);
+      // Use requestAnimationFrame to ensure layout is complete
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
+          mounted.current = true;
+        });
+      });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -35,7 +40,6 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
     const idx = Math.round(y / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(idx, values.length - 1));
 
-    // Snap to exact position
     scrollRef.current?.scrollTo({ y: clamped * ITEM_HEIGHT, animated: true });
 
     if (clamped !== lastIndex.current) {
@@ -45,22 +49,8 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
     }
   }, [onChange, values]);
 
-  const handleBeginDrag = useCallback(() => {
-    isDragging.current = true;
-  }, []);
-
   const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    isDragging.current = false;
     snapAndEmit(e.nativeEvent.contentOffset.y);
-  }, [snapAndEmit]);
-
-  const handleDragEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    // If velocity is ~0, momentum event won't fire — snap immediately
-    const vel = e.nativeEvent.velocity?.y ?? 0;
-    if (Math.abs(vel) < 0.1) {
-      isDragging.current = false;
-      snapAndEmit(e.nativeEvent.contentOffset.y);
-    }
   }, [snapAndEmit]);
 
   return (
@@ -68,9 +58,8 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
         decelerationRate="normal"
-        onScrollBeginDrag={handleBeginDrag}
-        onScrollEndDrag={handleDragEnd}
         onMomentumScrollEnd={handleMomentumEnd}
         contentContainerStyle={{
           paddingTop: PAD_ITEMS * ITEM_HEIGHT,
