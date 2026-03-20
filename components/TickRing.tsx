@@ -36,19 +36,22 @@ export const TickRing = memo(function TickRing({ size, activeTicks, totalTicks }
           const isDepleted = i > edgeIndex;
           const isEdge = i === edgeIndex;
 
+          // Dot is always present at the outer edge
+          const dot = (
+            <Line
+              key={`d${i}`}
+              x1={dotX}
+              y1={dotY}
+              x2={dotX}
+              y2={dotY}
+              stroke={tint(0.8)}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+          );
+
           if (isDepleted) {
-            return (
-              <Line
-                key={i}
-                x1={dotX}
-                y1={dotY}
-                x2={dotX}
-                y2={dotY}
-                stroke={tint(0.8)}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
-            );
+            return dot;
           }
 
           let opacity: number;
@@ -68,7 +71,8 @@ export const TickRing = memo(function TickRing({ size, activeTicks, totalTicks }
           const x1 = center + (radius - TICK_LENGTH) * cosA;
           const y1 = center + (radius - TICK_LENGTH) * sinA;
 
-          return (
+          return [
+            dot,
             <Line
               key={i}
               x1={x1}
@@ -78,8 +82,8 @@ export const TickRing = memo(function TickRing({ size, activeTicks, totalTicks }
               stroke={tint(opacity)}
               strokeWidth={1.5}
               strokeLinecap="round"
-            />
-          );
+            />,
+          ];
         })}
       </Svg>
     </View>

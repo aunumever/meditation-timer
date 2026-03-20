@@ -71,9 +71,11 @@ function StopIcon() {
 
 function ControlButton({
   onPress,
+  label,
   children,
 }: {
   onPress: () => void;
+  label: string;
   children: React.ReactNode;
 }) {
   return (
@@ -82,6 +84,7 @@ function ControlButton({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
+      accessibilityLabel={label}
       style={{
         width: HIT,
         height: HIT,
@@ -129,7 +132,7 @@ export function TimerControls({
   return (
     <View style={{ height: 64, width: HIT * 2 + GAP, justifyContent: "center", alignItems: "center" }}>
       {showOnlyStop ? (
-        <ControlButton onPress={onStop}>
+        <ControlButton onPress={onStop} label="Stop">
           <StopIcon />
         </ControlButton>
       ) : (
@@ -142,7 +145,7 @@ export function TimerControls({
             }}
             pointerEvents={showTwo ? "auto" : "none"}
           >
-            <ControlButton onPress={onStop}>
+            <ControlButton onPress={onStop} label="Stop">
               <StopIcon />
             </ControlButton>
           </Animated.View>
@@ -153,15 +156,15 @@ export function TimerControls({
             }}
           >
             {phase === "meditating" ? (
-              <ControlButton onPress={onPause}>
+              <ControlButton onPress={onPause} label="Pause">
                 <PauseIcon />
               </ControlButton>
             ) : phase === "paused" ? (
-              <ControlButton onPress={onResume}>
+              <ControlButton onPress={onResume} label="Resume">
                 <PlayIcon />
               </ControlButton>
             ) : (
-              <ControlButton onPress={onPlay}>
+              <ControlButton onPress={onPlay} label="Play">
                 <PlayIcon />
               </ControlButton>
             )}

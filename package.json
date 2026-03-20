@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "$HOME/.maestro/bin/maestro test .maestro/"
+    "test:e2e": "$HOME/.maestro/bin/maestro test --device 28D5EC31-4BD2-43FA-9A85-682BAB2A78D3 .maestro/"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

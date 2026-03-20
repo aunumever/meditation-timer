@@ -12,7 +12,7 @@ function withHomeIndicatorHidden(config) {
   config = withInfoPlist(config, (config) => {
     config.modResults.UIRequiresFullScreen = true;
     config.modResults.UIStatusBarHidden = true;
-    config.modResults.UIViewControllerBasedStatusBarAppearance = true;
+    config.modResults.UIViewControllerBasedStatusBarAppearance = false;
     return config;
   });
 

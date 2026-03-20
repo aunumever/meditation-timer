@@ -2,13 +2,19 @@ appId: com.aunum.meditation-timer
 ---
 # Toggle night mode in settings
 - launchApp
-- swipeLeft
-- assertVisible: "Night Mode"
+- waitForAnimationToEnd
+- swipe:
+    direction: LEFT
+    duration: 400
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Session"
 - scrollUntilVisible:
     element: "Night Mode"
     direction: DOWN
 # Tap the night mode toggle
 - tapOn: "Night Mode"
+- waitForAnimationToEnd
 # UI should still be functional (colors change to red, text remains)
 - assertVisible: "Session"
 - assertVisible: "Rav Vast"

@@ -12,7 +12,7 @@ export function PillSelect<T extends string | number>({
   selected,
   onSelect,
 }: PillSelectProps<T>) {
-  const { tint, night } = useTheme();
+  const { tint } = useTheme();
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
       {options.map((opt) => {
@@ -33,7 +33,7 @@ export function PillSelect<T extends string | number>({
                 fontSize: 13,
                 fontWeight: "500",
                 letterSpacing: 0.3,
-                color: isActive ? (night ? tint(0.15) : "rgba(0,0,0,0.9)") : tint(0.5),
+                color: isActive ? "rgba(0,0,0,0.85)" : tint(0.5),
               }}
             >
               {opt.label}

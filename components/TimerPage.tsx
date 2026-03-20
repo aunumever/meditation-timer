@@ -215,7 +215,7 @@ export function TimerPage({
       className="flex-1 bg-black"
       {...panResponder.panHandlers}
     >
-      <View className="flex-1 items-center justify-center" style={{ paddingTop: 60 }}>
+      <View className="flex-1 items-center justify-center">
         <PauseAnimationWrapper isPaused={state.phase === "paused"}>
           <View className="items-center justify-center">
             <Animated.View style={{ opacity: ringOpacity }}>
@@ -243,7 +243,7 @@ export function TimerPage({
         </View>
       </View>
 
-      <View style={{ alignItems: "center", paddingBottom: 60 }}>
+      <View style={{ position: "absolute", bottom: 60, left: 0, right: 0, alignItems: "center" }}>
         <TimerControls
           phase={state.phase}
           onPlay={onPlay}
