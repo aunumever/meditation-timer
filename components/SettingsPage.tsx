@@ -227,7 +227,7 @@ export function SettingsPage({
   onPreviewIntervalBell,
   onDimPreview,
 }: SettingsPageProps) {
-  const { tint } = useTheme();
+  const { tint, night } = useTheme();
   const insets = useSafeAreaInsets();
 
   // Slider shows brightness (1 = full, 0.05 = nearly black), stored as overlay opacity (inverted)
@@ -302,7 +302,7 @@ export function SettingsPage({
         <Switch
           value={settings.nightMode}
           onValueChange={(v) => onUpdate({ nightMode: v })}
-          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          trackColor={{ false: "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
           thumbColor={tint(1)}
         />
       </View>
@@ -319,7 +319,7 @@ export function SettingsPage({
         <Switch
           value={settings.dimEnabled}
           onValueChange={(v) => onUpdate({ dimEnabled: v })}
-          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          trackColor={{ false: "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
           thumbColor={tint(1)}
         />
       </View>
@@ -365,7 +365,7 @@ export function SettingsPage({
             <Switch
               value={settings.intervalEnabled}
               onValueChange={(v) => onUpdate({ intervalEnabled: v })}
-              trackColor={{ false: tint(0.08), true: tint(0.25) }}
+              trackColor={{ false: "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
               thumbColor={tint(1)}
             />
           </View>
@@ -418,7 +418,7 @@ export function SettingsPage({
         <Switch
           value={settings.overrideSilent}
           onValueChange={(v) => onUpdate({ overrideSilent: v })}
-          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          trackColor={{ false: "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
           thumbColor={tint(1)}
         />
       </View>
