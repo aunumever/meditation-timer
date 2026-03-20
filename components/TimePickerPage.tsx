@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { ScrollPicker } from "./ScrollPicker";
 import { useTheme } from "@/lib/theme";
 
 interface TimePickerPageProps {
@@ -23,33 +23,21 @@ export function TimePickerPage({
   return (
     <View className="flex-1 items-center justify-center bg-black">
       <View className="flex-row items-center">
-        <View style={{ width: 128 }}>
-          <Picker
-            selectedValue={hours}
-            onValueChange={(v) => onChangeHours(v as number)}
-            itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor="transparent"
-          >
-            {HOURS.map((h) => (
-              <Picker.Item key={h} label={String(h)} value={h} color={tint(1)} />
-            ))}
-          </Picker>
-        </View>
-        <Text style={{ color: tint(0.4), fontSize: 18 }}>hours</Text>
+        <ScrollPicker
+          values={HOURS}
+          selected={hours}
+          onChange={onChangeHours}
+          width={80}
+        />
+        <Text style={{ color: tint(0.4), fontSize: 18, marginHorizontal: 8 }}>hours</Text>
 
-        <View style={{ width: 128, marginLeft: 16 }}>
-          <Picker
-            selectedValue={minutes}
-            onValueChange={(v) => onChangeMinutes(v as number)}
-            itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor="transparent"
-          >
-            {MINUTES.map((m) => (
-              <Picker.Item key={m} label={String(m)} value={m} color={tint(1)} />
-            ))}
-          </Picker>
-        </View>
-        <Text style={{ color: tint(0.4), fontSize: 18 }}>min</Text>
+        <ScrollPicker
+          values={MINUTES}
+          selected={minutes}
+          onChange={onChangeMinutes}
+          width={80}
+        />
+        <Text style={{ color: tint(0.4), fontSize: 18, marginLeft: 8 }}>min</Text>
       </View>
     </View>
   );
