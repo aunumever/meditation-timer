@@ -41,7 +41,8 @@
       "expo-router",
       "expo-audio",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withHomeIndicatorHidden"
     ],
     "experiments": {
       "typedRoutes": true
