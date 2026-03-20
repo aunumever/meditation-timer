@@ -16,8 +16,11 @@ appId: com.aunum.meditation-timer
 - assertVisible: "Gong"
 - assertVisible: "Bell Count"
 - assertVisible: "Prep Time"
-- assertVisible: "Extra Dim"
+- scrollUntilVisible:
+    element: "Ambience"
+    direction: DOWN
 - assertVisible: "Night Mode"
+- assertVisible: "Extra Dim"
 - scrollUntilVisible:
     element: "Intervals"
     direction: DOWN

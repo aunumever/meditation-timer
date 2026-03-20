@@ -285,6 +285,28 @@ export function SettingsPage({
         />
       </SettingRow>
 
+      <Divider />
+
+      {/* Ambience */}
+      <SectionTitle>Ambience</SectionTitle>
+
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <View style={{ flex: 1, marginRight: 16 }}>
+          <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+            Night Mode
+          </Text>
+          <Text style={{ color: tint(0.35), fontSize: 13 }}>
+            Removes blue light for evening use
+          </Text>
+        </View>
+        <Switch
+          value={settings.nightMode}
+          onValueChange={(v) => onUpdate({ nightMode: v })}
+          trackColor={{ false: tint(0.08), true: tint(0.25) }}
+          thumbColor={tint(1)}
+        />
+      </View>
+
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: settings.dimEnabled ? 16 : 32 }}>
         <View style={{ flex: 1, marginRight: 16 }}>
           <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
@@ -324,23 +346,6 @@ export function SettingsPage({
           />
         </Animated.View>
       )}
-
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
-        <View style={{ flex: 1, marginRight: 16 }}>
-          <Text style={{ color: tint(0.5), fontSize: 12, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
-            Night Mode
-          </Text>
-          <Text style={{ color: tint(0.35), fontSize: 13 }}>
-            Removes blue light for evening use
-          </Text>
-        </View>
-        <Switch
-          value={settings.nightMode}
-          onValueChange={(v) => onUpdate({ nightMode: v })}
-          trackColor={{ false: tint(0.08), true: tint(0.25) }}
-          thumbColor={tint(1)}
-        />
-      </View>
 
       <Divider />
 
