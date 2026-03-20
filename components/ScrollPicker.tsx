@@ -3,7 +3,7 @@ import { View, Text, ScrollView, type NativeSyntheticEvent, type NativeScrollEve
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/lib/theme";
 
-const ITEM_HEIGHT = 44;
+const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const PAD_ITEMS = Math.floor(VISIBLE_ITEMS / 2);
@@ -19,11 +19,11 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
   const { tint } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const lastIndex = useRef(values.indexOf(selected));
-  const isScrolling = useRef(false);
+  const isDragging = useRef(false);
 
   useEffect(() => {
     const idx = values.indexOf(selected);
-    if (idx >= 0 && !isScrolling.current) {
+    if (idx >= 0 && !isDragging.current) {
       lastIndex.current = idx;
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
@@ -31,9 +31,12 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const snapTo = useCallback((y: number) => {
+  const snapAndEmit = useCallback((y: number) => {
     const idx = Math.round(y / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(idx, values.length - 1));
+
+    // Snap to exact position
+    scrollRef.current?.scrollTo({ y: clamped * ITEM_HEIGHT, animated: true });
 
     if (clamped !== lastIndex.current) {
       lastIndex.current = clamped;
@@ -42,23 +45,32 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
     }
   }, [onChange, values]);
 
-  const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    isScrolling.current = false;
-    snapTo(e.nativeEvent.contentOffset.y);
-  }, [snapTo]);
-
   const handleBeginDrag = useCallback(() => {
-    isScrolling.current = true;
+    isDragging.current = true;
   }, []);
+
+  const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    isDragging.current = false;
+    snapAndEmit(e.nativeEvent.contentOffset.y);
+  }, [snapAndEmit]);
+
+  const handleDragEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // If velocity is ~0, momentum event won't fire — snap immediately
+    const vel = e.nativeEvent.velocity?.y ?? 0;
+    if (Math.abs(vel) < 0.1) {
+      isDragging.current = false;
+      snapAndEmit(e.nativeEvent.contentOffset.y);
+    }
+  }, [snapAndEmit]);
 
   return (
     <View style={{ width, height: PICKER_HEIGHT, overflow: "hidden" }}>
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
-        decelerationRate="fast"
+        decelerationRate="normal"
         onScrollBeginDrag={handleBeginDrag}
+        onScrollEndDrag={handleDragEnd}
         onMomentumScrollEnd={handleMomentumEnd}
         contentContainerStyle={{
           paddingTop: PAD_ITEMS * ITEM_HEIGHT,
