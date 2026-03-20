@@ -334,24 +334,29 @@ export function startBackgroundNoise(noise: BackgroundNoise): void {
   bgTargetVol = 0;
 
   const player = createAudioPlayer(bgAsset);
-  player.volume = 0;
-  player.play();
   bgPlayers.push(player);
 
-  // Fade in over 3 seconds
-  const steps = 60;
-  const intervalMs = 50;
-  let step = 0;
-  bgFadeTimer = setInterval(() => {
-    step++;
-    bgTargetVol = Math.min(1, step / steps);
-    for (const p of bgPlayers) {
-      try { p.volume = bgTargetVol; } catch { /* ok */ }
-    }
-    if (step >= steps) {
-      if (bgFadeTimer) { clearInterval(bgFadeTimer); bgFadeTimer = null; }
-    }
-  }, intervalMs);
+  // Start muted, then begin fade-in after player is playing
+  player.play();
+  // Force volume to 0 after play starts (expo-audio may reset volume on play)
+  player.volume = 0;
+
+  // Fade in over 3 seconds, starting after a brief delay
+  setTimeout(() => {
+    const steps = 60;
+    const intervalMs = 50;
+    let step = 0;
+    bgFadeTimer = setInterval(() => {
+      step++;
+      bgTargetVol = Math.min(1, step / steps);
+      for (const p of bgPlayers) {
+        try { p.volume = bgTargetVol; } catch { /* ok */ }
+      }
+      if (step >= steps) {
+        if (bgFadeTimer) { clearInterval(bgFadeTimer); bgFadeTimer = null; }
+      }
+    }, intervalMs);
+  }, 100);
 
   // Start the loop scheduling
   scheduleNextLoop();
