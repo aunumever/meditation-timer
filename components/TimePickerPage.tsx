@@ -22,22 +22,24 @@ export function TimePickerPage({
 
   return (
     <View className="flex-1 items-center justify-center bg-black">
-      <View className="flex-row items-center">
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
         <ScrollPicker
           values={HOURS}
           selected={hours}
           onChange={onChangeHours}
           width={80}
+          label="hours"
         />
-        <Text style={{ color: tint(0.4), fontSize: 18, marginHorizontal: 8 }}>hours</Text>
+
+        <View style={{ width: 24 }} />
 
         <ScrollPicker
           values={MINUTES}
           selected={minutes}
           onChange={onChangeMinutes}
           width={80}
+          label="min"
         />
-        <Text style={{ color: tint(0.4), fontSize: 18, marginLeft: 8 }}>min</Text>
       </View>
     </View>
   );

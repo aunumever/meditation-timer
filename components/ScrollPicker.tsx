@@ -13,24 +13,21 @@ interface ScrollPickerProps {
   selected: number;
   onChange: (value: number) => void;
   width?: number;
+  label?: string;
 }
 
-export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollPickerProps) {
+export function ScrollPicker({ values, selected, onChange, width = 80, label }: ScrollPickerProps) {
   const { tint } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const lastIndex = useRef(values.indexOf(selected));
-  const mounted = useRef(false);
 
-  // Initial scroll on mount
   useEffect(() => {
     const idx = values.indexOf(selected);
     if (idx >= 0) {
       lastIndex.current = idx;
-      // Use requestAnimationFrame to ensure layout is complete
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
-          mounted.current = true;
         });
       });
     }
@@ -53,10 +50,13 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
     snapAndEmit(e.nativeEvent.contentOffset.y);
   }, [snapAndEmit]);
 
+  const totalWidth = label ? width + 60 : width;
+
   return (
-    <View style={{ width, height: PICKER_HEIGHT, overflow: "hidden" }}>
+    <View style={{ width: totalWidth, height: PICKER_HEIGHT, overflow: "hidden", flexDirection: "row" }}>
       <ScrollView
         ref={scrollRef}
+        style={{ width: totalWidth }}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="normal"
@@ -73,20 +73,34 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
               key={i}
               style={{
                 height: ITEM_HEIGHT,
-                justifyContent: "center",
+                flexDirection: "row",
                 alignItems: "center",
               }}
             >
-              <Text
-                style={{
-                  color: tint(isSelected ? 1 : 0.3),
-                  fontSize: 22,
-                  fontWeight: "300",
-                  letterSpacing: 1,
-                }}
-              >
-                {val}
-              </Text>
+              <View style={{ width, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: tint(isSelected ? 1 : 0.3),
+                    fontSize: 22,
+                    fontWeight: "300",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {val}
+                </Text>
+              </View>
+              {label && isSelected && (
+                <Text
+                  style={{
+                    color: tint(0.4),
+                    fontSize: 16,
+                    fontWeight: "300",
+                    marginLeft: 4,
+                  }}
+                >
+                  {label}
+                </Text>
+              )}
             </View>
           );
         })}
