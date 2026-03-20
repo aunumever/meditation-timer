@@ -50,34 +50,31 @@ export function ScrollPicker({ values, selected, onChange, width = 80, label }: 
     snapAndEmit(e.nativeEvent.contentOffset.y);
   }, [snapAndEmit]);
 
-  const totalWidth = label ? width + 60 : width;
-
   return (
-    <View style={{ width: totalWidth, height: PICKER_HEIGHT, overflow: "hidden", flexDirection: "row" }}>
-      <ScrollView
-        ref={scrollRef}
-        style={{ width: totalWidth }}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
-        decelerationRate="normal"
-        onMomentumScrollEnd={handleMomentumEnd}
-        contentContainerStyle={{
-          paddingTop: PAD_ITEMS * ITEM_HEIGHT,
-          paddingBottom: PAD_ITEMS * ITEM_HEIGHT,
-        }}
-      >
-        {values.map((val, i) => {
-          const isSelected = val === selected;
-          return (
-            <View
-              key={i}
-              style={{
-                height: ITEM_HEIGHT,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ width, alignItems: "center" }}>
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={{ width, height: PICKER_HEIGHT, overflow: "hidden" }}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={ITEM_HEIGHT}
+          decelerationRate="normal"
+          onMomentumScrollEnd={handleMomentumEnd}
+          contentContainerStyle={{
+            paddingTop: PAD_ITEMS * ITEM_HEIGHT,
+            paddingBottom: PAD_ITEMS * ITEM_HEIGHT,
+          }}
+        >
+          {values.map((val, i) => {
+            const isSelected = val === selected;
+            return (
+              <View
+                key={i}
+                style={{
+                  height: ITEM_HEIGHT,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
                 <Text
                   style={{
                     color: tint(isSelected ? 1 : 0.3),
@@ -89,22 +86,22 @@ export function ScrollPicker({ values, selected, onChange, width = 80, label }: 
                   {val}
                 </Text>
               </View>
-              {label && isSelected && (
-                <Text
-                  style={{
-                    color: tint(0.4),
-                    fontSize: 16,
-                    fontWeight: "300",
-                    marginLeft: 4,
-                  }}
-                >
-                  {label}
-                </Text>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+            );
+          })}
+        </ScrollView>
+      </View>
+      {label && (
+        <Text
+          style={{
+            color: tint(0.4),
+            fontSize: 16,
+            fontWeight: "300",
+            marginLeft: 8,
+          }}
+        >
+          {label}
+        </Text>
+      )}
     </View>
   );
 }
