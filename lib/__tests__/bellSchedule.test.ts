@@ -44,4 +44,33 @@ describe("computeBellSchedule", () => {
       { atSecs: 300, type: "session-end" },
     ]);
   });
+
+  it("handles 60 min interval frequency", () => {
+    // 2 hour session with 60 min intervals
+    const schedule = computeBellSchedule(7200, true, 60);
+    expect(schedule).toEqual([
+      { atSecs: 0, type: "session-start" },
+      { atSecs: 3600, type: "interval" },
+      { atSecs: 7200, type: "session-end" },
+    ]);
+  });
+
+  it("handles 5 min intervals in 15 min session", () => {
+    const schedule = computeBellSchedule(900, true, 5);
+    expect(schedule).toEqual([
+      { atSecs: 0, type: "session-start" },
+      { atSecs: 300, type: "interval" },
+      { atSecs: 600, type: "interval" },
+      { atSecs: 900, type: "session-end" },
+    ]);
+  });
+
+  it("handles exact match of duration and interval", () => {
+    // 15 min session with 15 min intervals — no interval bell (would overlap with end)
+    const schedule = computeBellSchedule(900, true, 15);
+    expect(schedule).toEqual([
+      { atSecs: 0, type: "session-start" },
+      { atSecs: 900, type: "session-end" },
+    ]);
+  });
 });

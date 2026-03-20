@@ -418,11 +418,12 @@ export function SettingsPage({
         />
       </View>
 
-      {/* Enso circle and haiku */}
+      {/* Enso circle and haiku — hidden for now
       <View style={{ alignItems: "center", marginTop: 80, marginBottom: 16 }}>
         <EnsoRing size={70} />
         <TappableHaiku />
       </View>
+      */}
     </ScrollView>
   );
 }

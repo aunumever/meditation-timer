@@ -130,6 +130,68 @@ describe("timerReducer", () => {
       const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 300000 });
       expect(synced.remaining).toBeCloseTo(300, 0);
     });
+
+    it("transitions to overtime if backgrounded past duration", () => {
+      const state = play(60, 0, 0);
+      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 120000 });
+      expect(synced.phase).toBe("overtime");
+      expect(synced.overtimeSecs).toBeCloseTo(60, 0);
+    });
+
+    it("completes prep and starts meditation if backgrounded through prep", () => {
+      const state = play(600, 15, 0);
+      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 20000 });
+      expect(synced.phase).toBe("meditating");
+      expect(synced.prepRemaining).toBe(0);
+    });
+
+    it("does nothing when paused", () => {
+      const state = play(600, 0, 0);
+      const paused = timerReducer(state, { type: "PAUSE", now: 10000 });
+      const synced = timerReducer(paused, { type: "FOREGROUND_SYNC", now: 300000 });
+      expect(synced.phase).toBe("paused");
+    });
+  });
+
+  describe("SET_DURATION", () => {
+    it("updates duration when ready", () => {
+      const initial = createInitialState(600, 15);
+      const updated = timerReducer(initial, { type: "SET_DURATION", durationSecs: 1800, prepSecs: 30 });
+      expect(updated.durationSecs).toBe(1800);
+      expect(updated.remaining).toBe(1800);
+      expect(updated.prepSecs).toBe(30);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("handles very short session (1 second)", () => {
+      const state = play(1, 0, 0);
+      expect(state.phase).toBe("meditating");
+      const ticked = timerReducer(state, { type: "TICK", now: 2000 });
+      expect(ticked.phase).toBe("overtime");
+    });
+
+    it("handles multiple pause/resume cycles", () => {
+      let state = play(600, 0, 0);
+      // Meditate 10s, pause, wait 100s, resume, meditate 10s
+      state = timerReducer(state, { type: "PAUSE", now: 10000 });
+      state = timerReducer(state, { type: "RESUME", now: 110000 });
+      state = timerReducer(state, { type: "TICK", now: 120000 });
+      expect(state.remaining).toBeCloseTo(580, 0); // 20s elapsed total
+    });
+
+    it("stop resets all fields cleanly", () => {
+      let state = play(600, 15, 0);
+      state = timerReducer(state, { type: "TICK", now: 20000 });
+      state = timerReducer(state, { type: "PAUSE", now: 30000 });
+      state = timerReducer(state, { type: "STOP" });
+      expect(state.phase).toBe("ready");
+      expect(state.remaining).toBe(600);
+      expect(state.prepRemaining).toBe(15);
+      expect(state.overtimeSecs).toBe(0);
+      expect(state.elapsedBeforePause).toBe(0);
+      expect(state.startedAt).toBeNull();
+    });
   });
 });
 
@@ -188,5 +250,30 @@ describe("detectBellEvents", () => {
     const next: TimerState = { ...base, phase: "meditating", remaining: 2695 };
     const events = detectBellEvents(prev, next, false, 15);
     expect(events).toEqual([]);
+  });
+
+  it("does not fire events during normal meditation tick", () => {
+    const base = createInitialState(600, 0);
+    const prev: TimerState = { ...base, phase: "meditating", remaining: 500 };
+    const next: TimerState = { ...base, phase: "meditating", remaining: 499 };
+    const events = detectBellEvents(prev, next, false, 15);
+    expect(events).toEqual([]);
+  });
+
+  it("does not fire events on pause/resume", () => {
+    const base = createInitialState(600, 0);
+    const prev: TimerState = { ...base, phase: "meditating", remaining: 500 };
+    const next: TimerState = { ...base, phase: "paused", remaining: 500 };
+    const events = detectBellEvents(prev, next, false, 15);
+    expect(events).toEqual([]);
+  });
+
+  it("fires 60 min interval bell", () => {
+    const base = createInitialState(7200, 0);
+    const prev: TimerState = { ...base, phase: "meditating", remaining: 3605 };
+    const next: TimerState = { ...base, phase: "meditating", remaining: 3595 };
+    // elapsed crosses 3600 (60 min)
+    const events = detectBellEvents(prev, next, true, 60);
+    expect(events).toEqual([{ type: "interval", elapsedMinutes: 60 }]);
   });
 });

@@ -1,0 +1,16 @@
+appId: com.aunum.meditation-timer
+---
+# Swipe to settings page (right of timer)
+- launchApp
+- assertVisible: "0:10"
+- swipeLeft
+- assertVisible: "Session"
+- assertVisible: "Rav Vast"
+- assertVisible: "Singing Bowl"
+- assertVisible: "Gong"
+- assertVisible: "Bell Count"
+- assertVisible: "Prep Time"
+- assertVisible: "Extra Dim"
+- assertVisible: "Intervals"
+- assertVisible: "Night Mode"
+- assertVisible: "Override Silent Mode"

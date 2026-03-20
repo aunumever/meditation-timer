@@ -1,0 +1,23 @@
+appId: com.aunum.meditation-timer
+---
+# Full navigation: time picker <-> timer <-> settings
+- launchApp
+
+# Start on timer page (center)
+- assertVisible: "0:10"
+
+# Swipe to time picker
+- swipeRight
+- assertVisible: "hours"
+
+# Swipe back to timer
+- swipeLeft
+- assertVisible: "0:10"
+
+# Swipe to settings
+- swipeLeft
+- assertVisible: "Session"
+
+# Swipe back to timer
+- swipeRight
+- assertVisible: "0:10"

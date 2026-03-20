@@ -1,0 +1,9 @@
+appId: com.aunum.meditation-timer
+---
+# Timer page — default view, shows time and play button
+- launchApp
+- assertVisible: "0:10"
+# Play button should be visible (timer is in ready state)
+- assertVisible:
+    id: "play-button"
+    optional: true

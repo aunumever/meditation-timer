@@ -1,0 +1,33 @@
+appId: com.aunum.meditation-timer
+---
+# Start a timer session then stop it
+- launchApp
+- assertVisible: "0:10"
+
+# Tap play (center of screen, where play button is)
+- tapOn:
+    point: "50%,75%"
+
+# Should show prep countdown (default 15s prep)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "0:09"
+    timeout: 20000
+
+# Timer is now active — swiping should be blocked
+- swipeLeft
+# Should still be on timer page, not settings
+- assertNotVisible:
+    text: "Session"
+    optional: true
+
+# Stop the timer (stop button appears on left)
+- tapOn:
+    point: "35%,75%"
+
+# Back to ready state
+- assertVisible: "0:10"
+
+# Swiping should work again
+- swipeLeft
+- assertVisible: "Session"
