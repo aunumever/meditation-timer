@@ -22,7 +22,8 @@
 - `bun run ios` — start on iOS simulator
 - `bun run lint` — ESLint
 - `bun run typecheck` — TypeScript check
-- `bun run test` — Vitest
+- `bun run test` — Vitest (unit tests)
+- `bun run test:e2e` — Maestro (E2E, requires app on simulator)
 
 ## iOS Device Build
 - `npx expo prebuild --platform ios` — generates `ios/` folder from JS + plugins (run after adding native packages or changing plugins)

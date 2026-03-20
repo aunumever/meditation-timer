@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint-typecheck-test:
+    name: Lint, Typecheck & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Unit tests
+        run: bun run test
+
+  e2e:
+    name: Maestro E2E Tests
+    runs-on: macos-14
+    needs: lint-typecheck-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+
+      - name: Prebuild iOS
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Boot iOS Simulator
+        run: |
+          DEVICE_UDID=$(xcrun simctl list devices available -j | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable == true)] | first | .udid')
+          xcrun simctl boot "$DEVICE_UDID" || true
+          echo "SIMULATOR_UDID=$DEVICE_UDID" >> "$GITHUB_ENV"
+
+      - name: Build and install app on simulator
+        run: npx expo run:ios --device "$SIMULATOR_UDID"
+        timeout-minutes: 30
+
+      - name: Run Maestro tests
+        run: |
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro test .maestro/
+        timeout-minutes: 10
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-artifacts
+          path: ~/.maestro/tests/
