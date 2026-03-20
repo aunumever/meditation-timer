@@ -103,6 +103,7 @@ export function ScrollPicker({ values, selected, onChange, width = 80, label }: 
             fontSize: 16,
             fontWeight: "300",
             marginLeft: 8,
+            width: 50,
           }}
         >
           {label}

@@ -28,7 +28,7 @@ export function TimePickerPage({
           selected={hours}
           onChange={onChangeHours}
           width={80}
-          label="hours"
+          label={hours === 1 ? "hour" : "hours"}
         />
 
         <View style={{ width: 24 }} />
