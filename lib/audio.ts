@@ -267,7 +267,7 @@ export function playIntervalBellPreview(bell: IntervalBell): void {
 // --- Background noise (looping ambient sound during meditation) ---
 
 const BACKGROUND_NOISE_ASSETS: Record<Exclude<BackgroundNoise, "none">, number> = {
-  "brown-noise": require("@/assets/sounds/active/background/brown-noise.m4a"),
+  "brown-noise": require("@/assets/sounds/active/background/brown-noise.mp3"),
 };
 
 let bgPlayer: AudioPlayer | null = null;
