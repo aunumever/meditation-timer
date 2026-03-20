@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Switch, ScrollView, Pressable, Animated as RNAnimated, Easing } from "react-native";
+import { View, Text, ScrollView, Pressable, Animated as RNAnimated, Easing } from "react-native";
 import Slider from "@react-native-community/slider";
 import Svg, { Line as SvgLine } from "react-native-svg";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PillSelect } from "./PillSelect";
 import { SettingRow } from "./SettingRow";
+import { Toggle } from "./Toggle";
 import { useTheme } from "@/lib/theme";
 import type {
   Settings,
@@ -308,12 +309,9 @@ export function SettingsPage({
             Removes blue light for evening use
           </Text>
         </View>
-        <Switch
+        <Toggle
           value={settings.nightMode}
           onValueChange={(v) => onUpdate({ nightMode: v })}
-          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
-          thumbColor={tint(1)}
         />
       </View>
 
@@ -326,12 +324,9 @@ export function SettingsPage({
             Layers over your device brightness during meditation
           </Text>
         </View>
-        <Switch
+        <Toggle
           value={settings.dimEnabled}
           onValueChange={(v) => onUpdate({ dimEnabled: v })}
-          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
-          thumbColor={tint(1)}
         />
       </View>
 
@@ -384,12 +379,9 @@ export function SettingsPage({
             <Text style={{ color: tint(0.6), fontSize: 14 }}>
               Ring at regular intervals
             </Text>
-            <Switch
+            <Toggle
               value={settings.intervalEnabled}
               onValueChange={(v) => onUpdate({ intervalEnabled: v })}
-              trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
-              thumbColor={tint(1)}
             />
           </View>
 
@@ -438,12 +430,9 @@ export function SettingsPage({
             Bells play even when your phone is set to silent
           </Text>
         </View>
-        <Switch
+        <Toggle
           value={settings.overrideSilent}
           onValueChange={(v) => onUpdate({ overrideSilent: v })}
-          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
-          thumbColor={tint(1)}
         />
       </View>
       */}

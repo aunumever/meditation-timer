@@ -31,6 +31,7 @@ export function TimePickerPage({
             itemStyle={{ color: tint(1), fontSize: 24 }}
             selectionColor={selColor}
             style={{ backgroundColor: "black" }}
+            {...({ themeVariant: "dark" } as Record<string, string>)}
           >
             {HOURS.map((h) => (
               <Picker.Item key={h} label={String(h)} value={h} color={tint(1)} />
@@ -46,6 +47,7 @@ export function TimePickerPage({
             itemStyle={{ color: tint(1), fontSize: 24 }}
             selectionColor={selColor}
             style={{ backgroundColor: "black" }}
+            {...({ themeVariant: "dark" } as Record<string, string>)}
           >
             {MINUTES.map((m) => (
               <Picker.Item key={m} label={String(m)} value={m} color={tint(1)} />
