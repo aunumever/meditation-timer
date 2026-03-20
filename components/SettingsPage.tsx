@@ -311,8 +311,8 @@ export function SettingsPage({
         <Switch
           value={settings.nightMode}
           onValueChange={(v) => onUpdate({ nightMode: v })}
-          trackColor={{ false: night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)"}
+          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
+            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
           thumbColor={tint(1)}
         />
       </View>
@@ -329,8 +329,8 @@ export function SettingsPage({
         <Switch
           value={settings.dimEnabled}
           onValueChange={(v) => onUpdate({ dimEnabled: v })}
-          trackColor={{ false: night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)"}
+          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
+            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
           thumbColor={tint(1)}
         />
       </View>
@@ -387,8 +387,8 @@ export function SettingsPage({
             <Switch
               value={settings.intervalEnabled}
               onValueChange={(v) => onUpdate({ intervalEnabled: v })}
-              trackColor={{ false: night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)"}
+              trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
+            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
               thumbColor={tint(1)}
             />
           </View>
@@ -441,8 +441,8 @@ export function SettingsPage({
         <Switch
           value={settings.overrideSilent}
           onValueChange={(v) => onUpdate({ overrideSilent: v })}
-          trackColor={{ false: night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)", true: night ? "rgba(120,30,15,1)" : "rgba(80,80,80,1)" }}
-            ios_backgroundColor={night ? "rgba(40,15,10,1)" : "rgba(60,60,60,1)"}
+          trackColor={{ false: night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)", true: night ? "rgba(140,35,15,1)" : "rgba(80,80,80,1)" }}
+            ios_backgroundColor={night ? "rgba(50,20,15,1)" : "rgba(55,55,55,1)"}
           thumbColor={tint(1)}
         />
       </View>

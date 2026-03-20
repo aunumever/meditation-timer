@@ -19,7 +19,7 @@ export function TimePickerPage({
   onChangeMinutes,
 }: TimePickerPageProps) {
   const { tint, night } = useTheme();
-  const selColor = night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)";
+  const selColor = night ? "rgba(30,10,5,1)" : "rgba(30,30,30,1)";
 
   return (
     <View className="flex-1 items-center justify-center bg-black">
