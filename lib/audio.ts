@@ -267,7 +267,7 @@ export function playIntervalBellPreview(bell: IntervalBell): void {
 // --- Background noise (looping ambient sound during meditation) ---
 
 const BACKGROUND_NOISE_ASSETS: Record<Exclude<BackgroundNoise, "none">, number> = {
-  "brown-noise": require("@/assets/sounds/active/background/brown-noise.mp3"),
+  "brown-noise": require("@/assets/sounds/active/background/brown-noise.m4a"),
 };
 
 let bgPlayer: AudioPlayer | null = null;
@@ -281,7 +281,7 @@ function clearBgFade(): void {
 }
 
 export function startBackgroundNoise(noise: BackgroundNoise): void {
-  // Kill any existing player immediately (no fade for restart)
+  // Kill any existing player immediately
   clearBgFade();
   if (bgPlayer) {
     try { bgPlayer.pause(); } catch { /* ok */ }
@@ -290,28 +290,27 @@ export function startBackgroundNoise(noise: BackgroundNoise): void {
   }
   if (noise === "none") return;
 
-  const player = createAudioPlayer(BACKGROUND_NOISE_ASSETS[noise]);
+  const asset = BACKGROUND_NOISE_ASSETS[noise];
+  const player = createAudioPlayer(asset);
   player.loop = true;
-  player.volume = 0;
   bgPlayer = player;
 
-  // Small delay to ensure player is ready before playing
-  setTimeout(() => {
-    if (bgPlayer !== player) return; // was replaced
-    player.play();
+  // Start at volume 0 and play, then fade in
+  try { player.volume = 0; } catch { /* ok */ }
+  player.play();
 
-    // Fade in over 3 seconds
-    const steps = 30;
-    const intervalMs = 100;
-    let step = 0;
-    bgFadeTimer = setInterval(() => {
-      step++;
-      try {
-        if (bgPlayer === player) player.volume = Math.min(1, step / steps);
-      } catch { /* ok */ }
-      if (step >= steps) clearBgFade();
-    }, intervalMs);
-  }, 50);
+  // Fade in over 3 seconds
+  const steps = 60;
+  const intervalMs = 50;
+  let step = 0;
+  bgFadeTimer = setInterval(() => {
+    step++;
+    const vol = step / steps;
+    try {
+      if (bgPlayer === player) player.volume = Math.min(1, vol);
+    } catch { /* ok */ }
+    if (step >= steps) clearBgFade();
+  }, intervalMs);
 }
 
 export function stopBackgroundNoise(): void {
@@ -322,18 +321,18 @@ export function stopBackgroundNoise(): void {
   bgPlayer = null;
 
   // Fade out over 2 seconds
-  const steps = 20;
-  const intervalMs = 100;
+  const steps = 40;
+  const intervalMs = 50;
   let step = 0;
   let currentVol = 1;
   try { currentVol = player.volume; } catch { /* ok */ }
 
-  const fadeTimer = setInterval(() => {
+  const fadeOut = setInterval(() => {
     step++;
     const vol = currentVol * (1 - step / steps);
     try { player.volume = Math.max(0, vol); } catch { /* ok */ }
     if (step >= steps) {
-      clearInterval(fadeTimer);
+      clearInterval(fadeOut);
       try { player.pause(); } catch { /* ok */ }
       try { player.remove(); } catch { /* ok */ }
     }
