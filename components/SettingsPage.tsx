@@ -14,6 +14,7 @@ import type {
   BellCount,
   PrepTime,
   IntervalFrequency,
+  BackgroundNoise,
 } from "@/lib/settings";
 import { HAIKUS } from "@/lib/haiku";
 interface SettingsPageProps {
@@ -23,6 +24,7 @@ interface SettingsPageProps {
   onUpdate: (patch: Partial<Settings>) => void;
   onPreviewSessionBell?: (bell: SessionBell) => void;
   onPreviewIntervalBell?: (bell: IntervalBell) => void;
+  onPreviewBackgroundNoise?: (noise: BackgroundNoise) => void;
   onDimPreview?: (opacity: number) => void;
 }
 
@@ -45,10 +47,16 @@ const BELL_COUNT_OPTIONS: { label: string; value: BellCount }[] = [
 
 const PREP_TIME_OPTIONS: { label: string; value: PrepTime }[] = [
   { label: "Off", value: 0 },
+  { label: "3s", value: 3 },
   { label: "15s", value: 15 },
   { label: "30s", value: 30 },
   { label: "45s", value: 45 },
   { label: "60s", value: 60 },
+];
+
+const BACKGROUND_NOISE_OPTIONS: { label: string; value: BackgroundNoise }[] = [
+  { label: "Off", value: "none" },
+  { label: "Brown Noise", value: "brown-noise" },
 ];
 
 const INTERVAL_FREQ_OPTIONS: { label: string; value: IntervalFrequency }[] = [
@@ -225,6 +233,7 @@ export function SettingsPage({
   onUpdate,
   onPreviewSessionBell,
   onPreviewIntervalBell,
+  onPreviewBackgroundNoise,
   onDimPreview,
 }: SettingsPageProps) {
   const { tint, night } = useTheme();
@@ -346,6 +355,17 @@ export function SettingsPage({
           />
         </Animated.View>
       )}
+
+      <SettingRow label="Background Sound">
+        <PillSelect
+          options={BACKGROUND_NOISE_OPTIONS}
+          selected={settings.backgroundNoise}
+          onSelect={(v) => {
+            onUpdate({ backgroundNoise: v });
+            onPreviewBackgroundNoise?.(v);
+          }}
+        />
+      </SettingRow>
 
       <Divider />
 

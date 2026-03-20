@@ -3,7 +3,7 @@ import {
   createAudioPlayer,
   type AudioPlayer,
 } from "expo-audio";
-import type { SessionBell, IntervalBell } from "./settings";
+import type { SessionBell, IntervalBell, BackgroundNoise } from "./settings";
 
 const SESSION_BELL_ASSETS: Record<SessionBell, number> = {
   "rav-vast": require("@/assets/sounds/rav-vast-b-celtic-minor/fsharp3-b2.mp3"),
@@ -262,4 +262,92 @@ export function playSessionBellPreview(bell: SessionBell): void {
 
 export function playIntervalBellPreview(bell: IntervalBell): void {
   playSound(INTERVAL_BELL_ASSETS[bell]);
+}
+
+// --- Background noise (looping ambient sound during meditation) ---
+
+const BACKGROUND_NOISE_ASSETS: Record<Exclude<BackgroundNoise, "none">, number> = {
+  "brown-noise": require("@/assets/sounds/background/brown-noise.mp3"),
+};
+
+let bgPlayer: AudioPlayer | null = null;
+let bgFadeTimer: ReturnType<typeof setInterval> | null = null;
+
+function clearBgFade(): void {
+  if (bgFadeTimer) {
+    clearInterval(bgFadeTimer);
+    bgFadeTimer = null;
+  }
+}
+
+export function startBackgroundNoise(noise: BackgroundNoise): void {
+  stopBackgroundNoise();
+  if (noise === "none") return;
+
+  const player = createAudioPlayer(BACKGROUND_NOISE_ASSETS[noise]);
+  player.loop = true;
+  player.volume = 0;
+  player.play();
+  bgPlayer = player;
+
+  // Fade in over 3 seconds
+  const steps = 30;
+  const intervalMs = 100;
+  let step = 0;
+  bgFadeTimer = setInterval(() => {
+    step++;
+    if (bgPlayer) bgPlayer.volume = Math.min(1, step / steps);
+    if (step >= steps) clearBgFade();
+  }, intervalMs);
+}
+
+export function stopBackgroundNoise(): void {
+  clearBgFade();
+  if (!bgPlayer) return;
+
+  const player = bgPlayer;
+  bgPlayer = null;
+
+  // Fade out over 2 seconds
+  const steps = 20;
+  const intervalMs = 100;
+  let step = 0;
+  const currentVol = player.volume;
+
+  bgFadeTimer = setInterval(() => {
+    step++;
+    const vol = currentVol * (1 - step / steps);
+    try { player.volume = Math.max(0, vol); } catch { /* ok */ }
+    if (step >= steps) {
+      clearBgFade();
+      try { player.pause(); } catch { /* ok */ }
+      try { player.remove(); } catch { /* ok */ }
+    }
+  }, intervalMs);
+}
+
+export function pauseBackgroundNoise(): void {
+  if (bgPlayer) bgPlayer.pause();
+}
+
+export function resumeBackgroundNoise(): void {
+  if (bgPlayer) bgPlayer.play();
+}
+
+export function previewBackgroundNoise(noise: BackgroundNoise): void {
+  stopBackgroundNoise();
+  if (noise === "none") return;
+
+  const player = createAudioPlayer(BACKGROUND_NOISE_ASSETS[noise]);
+  player.loop = true;
+  player.volume = 1;
+  player.play();
+  bgPlayer = player;
+
+  // Auto-stop after 4 seconds
+  setTimeout(() => {
+    if (bgPlayer === player) {
+      stopBackgroundNoise();
+    }
+  }, 4000);
 }

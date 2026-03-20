@@ -13,10 +13,15 @@ import {
   playIntervalBell,
   playSessionBellPreview,
   playIntervalBellPreview,
+  previewBackgroundNoise,
   pauseBells,
   resumeBells,
   cancelBells,
   fadeOutAndStop,
+  startBackgroundNoise,
+  stopBackgroundNoise,
+  pauseBackgroundNoise,
+  resumeBackgroundNoise,
 } from "@/lib/audio";
 import type { BellEvent } from "@/lib/timer";
 import { ThemeContext, getTheme } from "@/lib/theme";
@@ -61,12 +66,27 @@ export default function Index() {
     onBellEvent: handleBellEvent,
   });
 
-  const play = useCallback(() => { cancelBells(); rawPlay(); }, [rawPlay]);
-  const pause = useCallback(() => { pauseBells(); rawPause(); }, [rawPause]);
-  const resume = useCallback(() => { resumeBells(); rawResume(); }, [rawResume]);
-  const stop = useCallback(() => { fadeOutAndStop(); rawStop(); }, [rawStop]);
+  const play = useCallback(() => {
+    cancelBells();
+    if (settingsRef.current.backgroundNoise !== "none") {
+      startBackgroundNoise(settingsRef.current.backgroundNoise);
+    }
+    rawPlay();
+  }, [rawPlay]);
+  const pause = useCallback(() => { pauseBells(); pauseBackgroundNoise(); rawPause(); }, [rawPause]);
+  const resume = useCallback(() => { resumeBells(); resumeBackgroundNoise(); rawResume(); }, [rawResume]);
+  const stop = useCallback(() => { fadeOutAndStop(); stopBackgroundNoise(); rawStop(); }, [rawStop]);
 
   const isTimerActive = state.phase !== "ready";
+
+  // Stop background noise when session ends (overtime)
+  const prevPhaseForBg = useRef(state.phase);
+  useEffect(() => {
+    if (prevPhaseForBg.current === "meditating" && state.phase === "overtime") {
+      stopBackgroundNoise();
+    }
+    prevPhaseForBg.current = state.phase;
+  }, [state.phase]);
 
   // Fade out preview sounds when swiping away from settings page
   // Only when no session is active — otherwise it kills the bell sequence
@@ -169,6 +189,7 @@ export default function Index() {
             onUpdate={updateSettings}
             onPreviewSessionBell={playSessionBellPreview}
             onPreviewIntervalBell={playIntervalBellPreview}
+            onPreviewBackgroundNoise={previewBackgroundNoise}
             onDimPreview={setDimOverlay}
           />
         </View>
