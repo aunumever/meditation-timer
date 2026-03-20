@@ -270,34 +270,73 @@ const BACKGROUND_NOISE_ASSETS: Record<Exclude<BackgroundNoise, "none">, number> 
   "brown-noise": require("@/assets/sounds/active/background/brown-noise.mp3"),
 };
 
-let bgPlayer: AudioPlayer | null = null;
-let bgFadeTimer: ReturnType<typeof setInterval> | null = null;
+// Double-buffered background noise for gapless looping.
+// Two players alternate with a crossfade overlap so there's never silence.
 
-function clearBgFade(): void {
-  if (bgFadeTimer) {
-    clearInterval(bgFadeTimer);
-    bgFadeTimer = null;
+const BG_LOOP_DURATION_MS = 8000;
+const BG_CROSSFADE_MS = 500;
+const BG_SCHEDULE_AHEAD_MS = BG_CROSSFADE_MS + 200;
+
+let bgPlayers: AudioPlayer[] = [];
+let bgLoopTimer: ReturnType<typeof setTimeout> | null = null;
+let bgFadeTimer: ReturnType<typeof setInterval> | null = null;
+let bgAsset: number | null = null;
+let bgTargetVol = 1;
+let bgActive = false;
+
+function clearBgTimers(): void {
+  if (bgFadeTimer) { clearInterval(bgFadeTimer); bgFadeTimer = null; }
+  if (bgLoopTimer) { clearTimeout(bgLoopTimer); bgLoopTimer = null; }
+}
+
+function removeAllBgPlayers(): void {
+  for (const p of bgPlayers) {
+    try { p.pause(); } catch { /* ok */ }
+    try { p.remove(); } catch { /* ok */ }
   }
+  bgPlayers = [];
+}
+
+function scheduleNextLoop(): void {
+  if (!bgActive || !bgAsset) return;
+
+  bgLoopTimer = setTimeout(() => {
+    if (!bgActive || !bgAsset) return;
+
+    // Create next player and start it
+    const next = createAudioPlayer(bgAsset);
+    next.volume = bgTargetVol;
+    next.play();
+    bgPlayers.push(next);
+
+    // Remove oldest player after crossfade completes
+    setTimeout(() => {
+      if (bgPlayers.length > 1) {
+        const old = bgPlayers.shift();
+        if (old) {
+          try { old.pause(); } catch { /* ok */ }
+          try { old.remove(); } catch { /* ok */ }
+        }
+      }
+    }, BG_CROSSFADE_MS + 100);
+
+    // Schedule the next one
+    scheduleNextLoop();
+  }, BG_LOOP_DURATION_MS - BG_SCHEDULE_AHEAD_MS);
 }
 
 export function startBackgroundNoise(noise: BackgroundNoise): void {
-  // Kill any existing player immediately
-  clearBgFade();
-  if (bgPlayer) {
-    try { bgPlayer.pause(); } catch { /* ok */ }
-    try { bgPlayer.remove(); } catch { /* ok */ }
-    bgPlayer = null;
-  }
+  stopBackgroundNoiseImmediate();
   if (noise === "none") return;
 
-  const asset = BACKGROUND_NOISE_ASSETS[noise];
-  const player = createAudioPlayer(asset);
-  player.loop = true;
-  bgPlayer = player;
+  bgAsset = BACKGROUND_NOISE_ASSETS[noise];
+  bgActive = true;
+  bgTargetVol = 0;
 
-  // Start at volume 0 and play, then fade in
-  try { player.volume = 0; } catch { /* ok */ }
+  const player = createAudioPlayer(bgAsset);
+  player.volume = 0;
   player.play();
+  bgPlayers.push(player);
 
   // Fade in over 3 seconds
   const steps = 60;
@@ -305,62 +344,92 @@ export function startBackgroundNoise(noise: BackgroundNoise): void {
   let step = 0;
   bgFadeTimer = setInterval(() => {
     step++;
-    const vol = step / steps;
-    try {
-      if (bgPlayer === player) player.volume = Math.min(1, vol);
-    } catch { /* ok */ }
-    if (step >= steps) clearBgFade();
+    bgTargetVol = Math.min(1, step / steps);
+    for (const p of bgPlayers) {
+      try { p.volume = bgTargetVol; } catch { /* ok */ }
+    }
+    if (step >= steps) {
+      if (bgFadeTimer) { clearInterval(bgFadeTimer); bgFadeTimer = null; }
+    }
   }, intervalMs);
+
+  // Start the loop scheduling
+  scheduleNextLoop();
+}
+
+function stopBackgroundNoiseImmediate(): void {
+  bgActive = false;
+  bgAsset = null;
+  clearBgTimers();
+  removeAllBgPlayers();
 }
 
 export function stopBackgroundNoise(): void {
-  clearBgFade();
-  if (!bgPlayer) return;
+  if (!bgActive && bgPlayers.length === 0) return;
 
-  const player = bgPlayer;
-  bgPlayer = null;
+  bgActive = false;
+  if (bgLoopTimer) { clearTimeout(bgLoopTimer); bgLoopTimer = null; }
+  if (bgFadeTimer) { clearInterval(bgFadeTimer); bgFadeTimer = null; }
+
+  const playersToFade = [...bgPlayers];
+  bgPlayers = [];
+  bgAsset = null;
 
   // Fade out over 2 seconds
   const steps = 40;
   const intervalMs = 50;
   let step = 0;
-  let currentVol = 1;
-  try { currentVol = player.volume; } catch { /* ok */ }
+  const startVol = bgTargetVol;
 
   const fadeOut = setInterval(() => {
     step++;
-    const vol = currentVol * (1 - step / steps);
-    try { player.volume = Math.max(0, vol); } catch { /* ok */ }
+    const vol = startVol * (1 - step / steps);
+    for (const p of playersToFade) {
+      try { p.volume = Math.max(0, vol); } catch { /* ok */ }
+    }
     if (step >= steps) {
       clearInterval(fadeOut);
-      try { player.pause(); } catch { /* ok */ }
-      try { player.remove(); } catch { /* ok */ }
+      for (const p of playersToFade) {
+        try { p.pause(); } catch { /* ok */ }
+        try { p.remove(); } catch { /* ok */ }
+      }
     }
   }, intervalMs);
 }
 
 export function pauseBackgroundNoise(): void {
-  if (bgPlayer) bgPlayer.pause();
+  for (const p of bgPlayers) {
+    try { p.pause(); } catch { /* ok */ }
+  }
+  clearBgTimers();
 }
 
 export function resumeBackgroundNoise(): void {
-  if (bgPlayer) bgPlayer.play();
+  if (bgPlayers.length === 0) return;
+  for (const p of bgPlayers) {
+    try { p.play(); } catch { /* ok */ }
+  }
+  bgActive = true;
+  scheduleNextLoop();
 }
 
 export function previewBackgroundNoise(noise: BackgroundNoise): void {
-  stopBackgroundNoise();
+  stopBackgroundNoiseImmediate();
   if (noise === "none") return;
 
-  const player = createAudioPlayer(BACKGROUND_NOISE_ASSETS[noise]);
-  player.loop = true;
+  bgAsset = BACKGROUND_NOISE_ASSETS[noise];
+  bgActive = true;
+  bgTargetVol = 1;
+
+  const player = createAudioPlayer(bgAsset);
   player.volume = 1;
   player.play();
-  bgPlayer = player;
+  bgPlayers.push(player);
+
+  scheduleNextLoop();
 
   // Auto-stop after 4 seconds
   setTimeout(() => {
-    if (bgPlayer === player) {
-      stopBackgroundNoise();
-    }
+    if (bgActive) stopBackgroundNoise();
   }, 4000);
 }
