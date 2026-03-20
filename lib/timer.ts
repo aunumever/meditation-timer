@@ -87,20 +87,18 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
             ...state,
             phase: "meditating",
             prepRemaining: 0,
-            remaining: meditationRemaining,
-            startedAt: state.startedAt,
-            elapsedBeforePause: state.elapsedBeforePause,
+            remaining: state.durationSecs,
+            startedAt: action.now,
+            elapsedBeforePause: 0,
           };
         }
         return { ...state, prepRemaining };
       }
 
       if (state.phase === "meditating") {
-        // totalElapsed includes prep time
-        const meditationElapsed = totalElapsed - state.prepSecs;
-        const remaining = Math.max(0, state.durationSecs - meditationElapsed);
+        const remaining = Math.max(0, state.durationSecs - totalElapsed);
         if (remaining <= 0) {
-          const overtimeElapsed = meditationElapsed - state.durationSecs;
+          const overtimeElapsed = totalElapsed - state.durationSecs;
           return {
             ...state,
             phase: "overtime",
@@ -112,8 +110,7 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
       }
 
       if (state.phase === "overtime") {
-        const meditationElapsed = totalElapsed - state.prepSecs;
-        const overtimeElapsed = meditationElapsed - state.durationSecs;
+        const overtimeElapsed = totalElapsed - state.durationSecs;
         return { ...state, overtimeSecs: Math.max(0, overtimeElapsed) };
       }
 

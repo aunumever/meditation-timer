@@ -13,7 +13,8 @@
     "ios": {
       "supportsTablet": true,
       "backgroundColor": "#000000",
-      "bundleIdentifier": "com.aunum.meditation-timer"
+      "bundleIdentifier": "com.aunum.meditation-timer",
+      "appleTeamId": "3FYQFH2U39"
     },
     "android": {
       "backgroundColor": "#000000",
