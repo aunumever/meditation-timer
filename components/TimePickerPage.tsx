@@ -19,15 +19,18 @@ export function TimePickerPage({
   onChangeMinutes,
 }: TimePickerPageProps) {
   const { tint, night } = useTheme();
+  const selColor = night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)";
+
   return (
     <View className="flex-1 items-center justify-center bg-black">
       <View className="flex-row items-center">
-        <View className="w-32">
+        <View style={{ width: 128, backgroundColor: "black" }}>
           <Picker
             selectedValue={hours}
             onValueChange={(v) => onChangeHours(v as number)}
             itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor={night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)"}
+            selectionColor={selColor}
+            style={{ backgroundColor: "black" }}
           >
             {HOURS.map((h) => (
               <Picker.Item key={h} label={String(h)} value={h} color={tint(1)} />
@@ -36,12 +39,13 @@ export function TimePickerPage({
         </View>
         <Text style={{ color: tint(0.4), fontSize: 18 }}>hours</Text>
 
-        <View className="w-32 ml-4">
+        <View style={{ width: 128, marginLeft: 16, backgroundColor: "black" }}>
           <Picker
             selectedValue={minutes}
             onValueChange={(v) => onChangeMinutes(v as number)}
             itemStyle={{ color: tint(1), fontSize: 24 }}
-            selectionColor={night ? "rgba(50,15,10,1)" : "rgba(230,230,230,1)"}
+            selectionColor={selColor}
+            style={{ backgroundColor: "black" }}
           >
             {MINUTES.map((m) => (
               <Picker.Item key={m} label={String(m)} value={m} color={tint(1)} />

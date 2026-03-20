@@ -380,8 +380,8 @@ export function stopBackgroundNoise(): void {
   bgPlayers = [];
   bgAsset = null;
 
-  // Fade out over 2 seconds
-  const steps = 40;
+  // Fade out over 0.8 seconds
+  const steps = 16;
   const intervalMs = 50;
   let step = 0;
   const startVol = bgTargetVol;
