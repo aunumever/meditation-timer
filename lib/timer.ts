@@ -73,14 +73,14 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
           const overflowSecs = totalElapsed - state.prepSecs;
           const meditationRemaining = Math.max(0, state.durationSecs - overflowSecs);
           if (meditationRemaining <= 0) {
+            // Backgrounded through entire session — keep original timeline
+            // so overtime TICK can compute correctly
             return {
               ...state,
               phase: "overtime",
               prepRemaining: 0,
               remaining: 0,
               overtimeSecs: overflowSecs - state.durationSecs,
-              startedAt: action.now,
-              elapsedBeforePause: 0,
             };
           }
           return {

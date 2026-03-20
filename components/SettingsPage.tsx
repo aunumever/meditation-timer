@@ -151,6 +151,7 @@ function TappableHaiku() {
       useNativeDriver: true,
     }).start(() => {
       setIndex((prev) => {
+        if (HAIKUS.length <= 1) return prev;
         let next = prev;
         while (next === prev) {
           next = Math.floor(Math.random() * HAIKUS.length);

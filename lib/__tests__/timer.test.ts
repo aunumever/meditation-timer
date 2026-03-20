@@ -145,6 +145,17 @@ describe("timerReducer", () => {
       expect(synced.prepRemaining).toBe(0);
     });
 
+    it("shows correct overtime when backgrounded through entire prep+session", () => {
+      // 15s prep + 60s session, backgrounded for 120s total
+      const state = play(60, 15, 0);
+      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 120000 });
+      expect(synced.phase).toBe("overtime");
+      expect(synced.overtimeSecs).toBeCloseTo(45, 0); // 120 - 15 - 60 = 45s overtime
+      // Subsequent tick should continue correctly
+      const ticked = timerReducer(synced, { type: "TICK", now: 125000 });
+      expect(ticked.overtimeSecs).toBeCloseTo(50, 0);
+    });
+
     it("does nothing when paused", () => {
       const state = play(600, 0, 0);
       const paused = timerReducer(state, { type: "PAUSE", now: 10000 });

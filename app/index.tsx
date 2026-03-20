@@ -53,7 +53,7 @@ export default function Index() {
     }
   }, []);
 
-  const { state, play: rawPlay, pause: rawPause, resume, stop: rawStop } = useTimer({
+  const { state, play: rawPlay, pause: rawPause, resume: rawResume, stop: rawStop } = useTimer({
     durationSecs,
     prepSecs: settings.prepTime,
     intervalEnabled: settings.intervalEnabled,
@@ -63,27 +63,20 @@ export default function Index() {
 
   const play = useCallback(() => { cancelBells(); rawPlay(); }, [rawPlay]);
   const pause = useCallback(() => { pauseBells(); rawPause(); }, [rawPause]);
+  const resume = useCallback(() => { resumeBells(); rawResume(); }, [rawResume]);
   const stop = useCallback(() => { fadeOutAndStop(); rawStop(); }, [rawStop]);
 
-  // Resume pending bells when unpausing
-  const prevPhaseRef = useRef(state.phase);
-  useEffect(() => {
-    if (prevPhaseRef.current === "paused" && state.phase === "meditating") {
-      resumeBells();
-    }
-    prevPhaseRef.current = state.phase;
-  }, [state.phase]);
+  const isTimerActive = state.phase !== "ready";
 
   // Fade out preview sounds when swiping away from settings page
+  // Only when no session is active — otherwise it kills the bell sequence
   const prevPageRef = useRef(activePage);
   useEffect(() => {
-    if (prevPageRef.current === 2 && activePage !== 2) {
+    if (prevPageRef.current === 2 && activePage !== 2 && !isTimerActive) {
       fadeOutAndStop();
     }
     prevPageRef.current = activePage;
-  }, [activePage]);
-
-  const isTimerActive = state.phase !== "ready";
+  }, [activePage, isTimerActive]);
 
   // Dim overlay: animated for session start/stop, instant for slider preview
   const dimAnim = useRef(new Animated.Value(0)).current;
@@ -98,7 +91,7 @@ export default function Index() {
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
     }).start();
-  }, [isTimerActive, settings.dimBrightness, dimAnim]);
+  }, [isTimerActive, settings.dimEnabled, settings.dimBrightness, dimAnim]);
 
   const setDimOverlay = useCallback((v: number) => {
     if (v > 0) {

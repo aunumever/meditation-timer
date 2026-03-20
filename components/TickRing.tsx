@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View } from "react-native";
 import Svg, { Line } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
@@ -13,7 +14,7 @@ const TICK_LENGTH = 22;
 const MIN_OPACITY = 0.12;
 const FADE_TICKS = 3;
 
-export function TickRing({ size, activeTicks, totalTicks }: TickRingProps) {
+export const TickRing = memo(function TickRing({ size, activeTicks, totalTicks }: TickRingProps) {
   const { tint } = useTheme();
   const center = size / 2;
   const radius = size / 2 - 20;
@@ -83,4 +84,4 @@ export function TickRing({ size, activeTicks, totalTicks }: TickRingProps) {
       </Svg>
     </View>
   );
-}
+});

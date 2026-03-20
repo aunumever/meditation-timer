@@ -5,7 +5,6 @@ import {
   createInitialState,
   detectBellEvents,
   type TimerState,
-  type TimerAction,
   type BellEvent,
 } from "@/lib/timer";
 
@@ -35,35 +34,29 @@ export function useTimer({
   const intervalFrequencyMinsRef = useRef(intervalFrequencyMins);
   intervalFrequencyMinsRef.current = intervalFrequencyMins;
 
-  // Wrap the reducer to detect bell events on every transition
-  const reducerWithBells = useCallback(
-    (state: TimerState, action: TimerAction): TimerState => {
-      const next = timerReducer(state, action);
-      if (next !== state) {
-        const events = detectBellEvents(
-          state,
-          next,
-          intervalEnabledRef.current,
-          intervalFrequencyMinsRef.current,
-        );
-        if (events.length > 0 && onBellEventRef.current) {
-          try {
-            onBellEventRef.current(events);
-          } catch (e) {
-            console.warn("Bell event error:", e);
-          }
-        }
-      }
-      return next;
-    },
-    [],
-  );
-
   const [state, dispatch] = useReducer(
-    reducerWithBells,
+    timerReducer,
     { durationSecs, prepSecs },
     ({ durationSecs: d, prepSecs: p }) => createInitialState(d, p),
   );
+
+  // Detect bell events via useEffect instead of inside reducer (React purity)
+  const prevStateRef = useRef(state);
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    prevStateRef.current = state;
+    if (prev === state) return;
+
+    const events = detectBellEvents(
+      prev,
+      state,
+      intervalEnabledRef.current,
+      intervalFrequencyMinsRef.current,
+    );
+    if (events.length > 0 && onBellEventRef.current) {
+      onBellEventRef.current(events);
+    }
+  }, [state]);
 
   const stateRef = useRef(state);
   stateRef.current = state;
