@@ -19,27 +19,19 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
   const { tint } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const lastIndex = useRef(values.indexOf(selected));
+  const isScrolling = useRef(false);
 
   useEffect(() => {
     const idx = values.indexOf(selected);
-    if (idx >= 0 && idx !== lastIndex.current) {
+    if (idx >= 0 && !isScrolling.current) {
       lastIndex.current = idx;
-      scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
-    }
-  }, [selected, values]);
-
-  // Initial scroll position
-  useEffect(() => {
-    const idx = values.indexOf(selected);
-    if (idx >= 0) {
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
       }, 50);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
+  const snapTo = useCallback((y: number) => {
     const idx = Math.round(y / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(idx, values.length - 1));
 
@@ -48,10 +40,16 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
       onChange(values[clamped]);
       Haptics.selectionAsync();
     }
-
-    // Snap to exact position
-    scrollRef.current?.scrollTo({ y: clamped * ITEM_HEIGHT, animated: true });
   }, [onChange, values]);
+
+  const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    isScrolling.current = false;
+    snapTo(e.nativeEvent.contentOffset.y);
+  }, [snapTo]);
+
+  const handleBeginDrag = useCallback(() => {
+    isScrolling.current = true;
+  }, []);
 
   return (
     <View style={{ width, height: PICKER_HEIGHT, overflow: "hidden" }}>
@@ -60,8 +58,8 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"
-        onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
+        onScrollBeginDrag={handleBeginDrag}
+        onMomentumScrollEnd={handleMomentumEnd}
         contentContainerStyle={{
           paddingTop: PAD_ITEMS * ITEM_HEIGHT,
           paddingBottom: PAD_ITEMS * ITEM_HEIGHT,
@@ -81,8 +79,9 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
               <Text
                 style={{
                   color: tint(isSelected ? 1 : 0.3),
-                  fontSize: isSelected ? 22 : 18,
+                  fontSize: 22,
                   fontWeight: "300",
+                  letterSpacing: 1,
                 }}
               >
                 {val}
@@ -91,32 +90,6 @@ export function ScrollPicker({ values, selected, onChange, width = 80 }: ScrollP
           );
         })}
       </ScrollView>
-
-      {/* Fade overlay top */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: ITEM_HEIGHT * 2,
-          backgroundColor: "transparent",
-          borderBottomWidth: 0,
-        }}
-      />
-      {/* Fade overlay bottom */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: ITEM_HEIGHT * 2,
-          backgroundColor: "transparent",
-        }}
-      />
     </View>
   );
 }
