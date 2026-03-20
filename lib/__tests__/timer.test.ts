@@ -52,17 +52,21 @@ describe("timerReducer", () => {
     });
   });
 
+  // Note: no-prep meditation has a 1s startedAt offset so the full
+  // duration is visible for 1 second before counting down.
+  // play(dur, 0, 0) sets startedAt = 1000, so tick times are +1s.
+
   describe("TICK during meditating", () => {
     it("counts down remaining time", () => {
       const state = play(60, 0, 0);
-      const ticked = timerReducer(state, { type: "TICK", now: 10000 });
+      const ticked = timerReducer(state, { type: "TICK", now: 11000 });
       expect(ticked.phase).toBe("meditating");
       expect(ticked.remaining).toBeCloseTo(50, 0);
     });
 
     it("transitions to overtime when time runs out", () => {
       const state = play(60, 0, 0);
-      const ticked = timerReducer(state, { type: "TICK", now: 61000 });
+      const ticked = timerReducer(state, { type: "TICK", now: 62000 });
       expect(ticked.phase).toBe("overtime");
       expect(ticked.remaining).toBe(0);
       expect(ticked.overtimeSecs).toBeCloseTo(1, 0);
@@ -72,9 +76,9 @@ describe("timerReducer", () => {
   describe("TICK during overtime", () => {
     it("counts up overtime seconds", () => {
       const state = play(10, 0, 0);
-      const overtime = timerReducer(state, { type: "TICK", now: 11000 });
+      const overtime = timerReducer(state, { type: "TICK", now: 12000 });
       expect(overtime.phase).toBe("overtime");
-      const later = timerReducer(overtime, { type: "TICK", now: 15000 });
+      const later = timerReducer(overtime, { type: "TICK", now: 16000 });
       expect(later.overtimeSecs).toBeCloseTo(5, 0);
     });
   });
@@ -82,8 +86,8 @@ describe("timerReducer", () => {
   describe("PAUSE / RESUME", () => {
     it("pauses during meditation", () => {
       const state = play(600, 0, 0);
-      const ticked = timerReducer(state, { type: "TICK", now: 10000 });
-      const paused = timerReducer(ticked, { type: "PAUSE", now: 10000 });
+      const ticked = timerReducer(state, { type: "TICK", now: 11000 });
+      const paused = timerReducer(ticked, { type: "PAUSE", now: 11000 });
       expect(paused.phase).toBe("paused");
       expect(paused.startedAt).toBeNull();
       expect(paused.elapsedBeforePause).toBeCloseTo(10, 0);
@@ -97,7 +101,7 @@ describe("timerReducer", () => {
 
     it("resumes from paused to meditating", () => {
       const state = play(600, 0, 0);
-      const paused = timerReducer(state, { type: "PAUSE", now: 10000 });
+      const paused = timerReducer(state, { type: "PAUSE", now: 11000 });
       const resumed = timerReducer(paused, { type: "RESUME", now: 20000 });
       expect(resumed.phase).toBe("meditating");
       expect(resumed.startedAt).toBe(20000);
@@ -105,7 +109,7 @@ describe("timerReducer", () => {
 
     it("preserves elapsed time across pause/resume cycle", () => {
       const state = play(600, 0, 0);
-      const paused = timerReducer(state, { type: "PAUSE", now: 10000 });
+      const paused = timerReducer(state, { type: "PAUSE", now: 11000 });
       const resumed = timerReducer(paused, { type: "RESUME", now: 50000 });
       // 10s elapsed before pause, then 5s after resume = 15s total
       const ticked = timerReducer(resumed, { type: "TICK", now: 55000 });
@@ -127,14 +131,14 @@ describe("timerReducer", () => {
   describe("FOREGROUND_SYNC", () => {
     it("recalculates time from wall clock", () => {
       const state = play(600, 0, 0);
-      // Simulate 5 minutes passing while backgrounded
-      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 300000 });
+      // Simulate 5 minutes passing while backgrounded (+1s offset)
+      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 301000 });
       expect(synced.remaining).toBeCloseTo(300, 0);
     });
 
     it("transitions to overtime if backgrounded past duration", () => {
       const state = play(60, 0, 0);
-      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 120000 });
+      const synced = timerReducer(state, { type: "FOREGROUND_SYNC", now: 121000 });
       expect(synced.phase).toBe("overtime");
       expect(synced.overtimeSecs).toBeCloseTo(60, 0);
     });
@@ -182,10 +186,10 @@ describe("timerReducer", () => {
 
     it("handles multiple pause/resume cycles", () => {
       let state = play(600, 0, 0);
-      // Meditate 10s, pause, wait 100s, resume, meditate 10s
-      state = timerReducer(state, { type: "PAUSE", now: 10000 });
-      state = timerReducer(state, { type: "RESUME", now: 110000 });
-      state = timerReducer(state, { type: "TICK", now: 120000 });
+      // Meditate 10s, pause, wait 100s, resume, meditate 10s (+1s offset)
+      state = timerReducer(state, { type: "PAUSE", now: 11000 });
+      state = timerReducer(state, { type: "RESUME", now: 111000 });
+      state = timerReducer(state, { type: "TICK", now: 121000 });
       expect(state.remaining).toBeCloseTo(580, 0); // 20s elapsed total
     });
 

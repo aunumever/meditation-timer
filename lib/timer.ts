@@ -53,7 +53,8 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
         prepRemaining: prepSecs,
         remaining: durationSecs,
         overtimeSecs: 0,
-        startedAt: now,
+        // Offset meditation start by 1s so full duration is visible
+        startedAt: hasPrep ? now : now + 1000,
         elapsedBeforePause: 0,
       };
     }
@@ -88,7 +89,8 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
             phase: "meditating",
             prepRemaining: 0,
             remaining: state.durationSecs,
-            startedAt: action.now,
+            // Offset by 1s so 10:00 is visible for the first second
+            startedAt: action.now + 1000,
             elapsedBeforePause: 0,
           };
         }
