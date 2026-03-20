@@ -120,10 +120,22 @@ export default function Index() {
 
   const theme = getTheme(settings.nightMode);
 
+  // Gentle fade-in on first load so black splash transitions smoothly
+  const appOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(appOpacity, {
+      toValue: 1,
+      duration: 600,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [appOpacity]);
+
   return (
     <ThemeContext.Provider value={theme}>
     <View className="flex-1 bg-black">
       <StatusBar hidden />
+      <Animated.View style={{ flex: 1, opacity: appOpacity }}>
       <PagerView
         ref={pagerRef}
         style={{ flex: 1 }}
@@ -163,6 +175,7 @@ export default function Index() {
       </PagerView>
 
       <PageDots total={3} active={activePage} />
+      </Animated.View>
 
       <Animated.View
         style={[StyleSheet.absoluteFill, { backgroundColor: dimBg }]}

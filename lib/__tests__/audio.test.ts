@@ -61,7 +61,7 @@ describe("playBellSequence", () => {
 
   it("plays each bell immediately on creation", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     expect(player.play).toHaveBeenCalledTimes(1);
   });
@@ -70,7 +70,7 @@ describe("playBellSequence", () => {
 describe("pauseBells / resumeBells", () => {
   it("pauses all ringing sequence players", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     pauseBells();
     expect(player.pause).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe("pauseBells / resumeBells", () => {
 
   it("resumes paused players", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     pauseBells();
     resumeBells();
@@ -111,7 +111,7 @@ describe("pauseBells / resumeBells", () => {
 describe("cancelBells", () => {
   it("stops and removes all sequence players", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     cancelBells();
     expect(player.pause).toHaveBeenCalled();
@@ -130,7 +130,7 @@ describe("cancelBells", () => {
 describe("fadeOutAndStop", () => {
   it("gradually reduces volume over ~400ms", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     fadeOutAndStop();
 
@@ -146,7 +146,7 @@ describe("fadeOutAndStop", () => {
 
   it("does not abruptly stop audio", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
     fadeOutAndStop();
 
@@ -179,7 +179,7 @@ describe("fadeOutAndStop", () => {
 describe("one-shot sounds (previews, interval bells)", () => {
   it("creates and plays a player for previews", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playSessionBellPreview("rav-vast");
     expect(createAudioPlayer).toHaveBeenCalledTimes(1);
     expect(player.play).toHaveBeenCalledTimes(1);
@@ -187,7 +187,7 @@ describe("one-shot sounds (previews, interval bells)", () => {
 
   it("cleans up preview player after 10 seconds", () => {
     const player = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValue(player as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValue(player as unknown as ReturnType<typeof createAudioPlayer>);
     playSessionBellPreview("rav-vast");
     vi.advanceTimersByTime(10000);
     expect(player.remove).toHaveBeenCalled();
@@ -195,11 +195,11 @@ describe("one-shot sounds (previews, interval bells)", () => {
 
   it("does not affect active bell sequence when preview plays", () => {
     const seqPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
 
     const previewPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(previewPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(previewPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playSessionBellPreview("rav-vast");
 
     // Pausing bells should only pause sequence player, not preview
@@ -210,11 +210,11 @@ describe("one-shot sounds (previews, interval bells)", () => {
 
   it("does not affect active bell sequence when interval bell plays", () => {
     const seqPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
 
     const intervalPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(intervalPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(intervalPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playIntervalBell("rav-vast-e4");
 
     // Cancel bells should remove sequence player but not interval player
@@ -225,11 +225,11 @@ describe("one-shot sounds (previews, interval bells)", () => {
 
   it("fadeOutAndStop fades both sequence and one-shot players", () => {
     const seqPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(seqPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playBellSequence(1, 1);
 
     const previewPlayer = mockPlayer();
-    vi.mocked(createAudioPlayer).mockReturnValueOnce(previewPlayer as ReturnType<typeof createAudioPlayer>);
+    vi.mocked(createAudioPlayer).mockReturnValueOnce(previewPlayer as unknown as ReturnType<typeof createAudioPlayer>);
     playSessionBellPreview("singing-bowl");
 
     fadeOutAndStop();
